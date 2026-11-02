@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Begum Sultan Kaplanhan</title>
+<meta name="description" content="Begum Sultan Kaplanhan: Computer Science graduate working where AI, product and design meet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Silkscreen&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0906; --bg2: #121110; --panel: #1a1816; --line: #2c2925;
+    --cream: #e7e3d2; --text: #cfcabb; --muted: #8d877a; --grey: #9a968c;
+    --accent: #e8813a; --accent2: #f4a340; --green: #a6c48a;
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: Inter, system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.65 var(--sans); }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  em { font-style: italic; color: var(--accent); }
+
+  /* intro (unchanged ASCII tiger) */
+  #intro { min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2rem; font-family: var(--mono); }
+  #c { display: block; cursor: pointer; }
+  #title { text-align: center; min-height: 4.5rem; opacity: 0; transition: opacity .8s; color: var(--accent2); }
+  #title.on { opacity: 1; }
+  #name { font-size: clamp(1.4rem, 4vw, 2.4rem); letter-spacing: .3em; }
+  #name::after { content: "_"; animation: blink 1s steps(1) infinite; }
+  #sub { color: #7a5530; font-size: .85rem; margin-top: .5rem; letter-spacing: .15em; display: inline-block; }
+  #sub:hover { color: var(--accent2); }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 5; background: rgba(18,17,16,.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line); }
+  nav .in { max-width: 1120px; margin: 0 auto; padding: .9rem 20px; display: flex; align-items: center; justify-content: flex-end; gap: 1.6rem; }
+  nav a.l { color: var(--grey); font-size: .95rem; transition: color .2s; }
+  .wip { margin-right: auto; display: inline-flex; align-items: center; gap: .5rem; padding: .3rem .8rem; border: 1px dashed var(--accent);
+    border-radius: 999px; font: .75rem var(--mono); color: var(--accent); }
+  .wip i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.2s steps(1) infinite; }
+  nav a.l:hover { color: var(--cream); }
+
+  /* shared */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  section.page { padding: 7rem 0; scroll-margin-top: 3rem; }
+  .dots { background-color: var(--bg2);
+    background-image: radial-gradient(rgba(231,227,210,.07) 1px, transparent 1px); background-size: 22px 22px; }
+  h2.big { font: 400 clamp(2.4rem, 5.5vw, 4rem)/1.05 var(--serif); color: var(--cream); margin: 0 0 3rem; text-align: center; letter-spacing: -.01em; }
+  h2.big .dim { color: var(--grey); }
+  .btn { display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.5rem; border-radius: 999px;
+    font: 500 1rem/1 var(--sans); transition: transform .2s, background .2s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.primary { background: var(--accent); color: #1a0f05; }
+  .btn.primary:hover { background: var(--accent2); }
+  .btn.ghost { background: var(--panel); color: var(--cream); border: 1px solid var(--line); }
+
+  /* terminal-window card */
+  .win { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .win .bar { display: flex; align-items: center; gap: .45rem; padding: .7rem 1rem; border-bottom: 1px solid var(--line);
+    font: .78rem var(--mono); color: var(--muted); }
+  .win .bar i { width: 10px; height: 10px; border-radius: 50%; background: #3a3631; }
+  .win .bar span { margin-left: .6rem; }
+
+  /* about */
+  .intro2 { min-height: 86svh; display: flex; flex-direction: column; justify-content: center; gap: 2.5rem; }
+  .intro2 h1 { font: 400 clamp(2.6rem, 6.5vw, 5rem)/1.05 var(--serif); margin: 0 auto; color: var(--cream); max-width: 16ch; text-align: center; }
+  .intro2 h1 .dim { color: var(--grey); }
+  /* galloping ASCII tigers in the corners */
+  .intro2 { position: relative; }
+  .tiger-run { position: absolute; width: clamp(150px, 26vw, 340px); pointer-events: none; }
+  .tiger-run.tr { top: 0; right: 0; }
+  .tiger-run.bl { bottom: 0; left: 0; }
+
+  /* projects */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.4rem; }
+  .card { display: flex; flex-direction: column; transition: transform .25s, border-color .25s; }
+  .card:hover { transform: translateY(-4px); border-color: rgba(232,129,58,.6); }
+  .card .body { padding: 1.6rem; display: flex; flex-direction: column; gap: .8rem; flex: 1; }
+  .card h3 { margin: 0; font: 400 2rem/1.1 var(--serif); color: var(--cream); }
+  .card p { margin: 0; color: var(--text); flex: 1; }
+  .tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .tags span { font: .75rem var(--mono); color: var(--green); border: 1px solid var(--line); border-radius: 999px; padding: .2rem .65rem; }
+  .card .go { color: var(--accent); font-size: .95rem; }
+
+  /* experience */
+  .jobs { border-top: 1px solid var(--line); }
+  .job { display: grid; grid-template-columns: 13rem 1fr; gap: 1.5rem; padding: 1.6rem 0; border-bottom: 1px solid var(--line); }
+  .job .when { font: .8rem/2.2 var(--mono); color: var(--muted); }
+  .job h3 { margin: 0 0 .35rem; font: 400 1.7rem/1.15 var(--serif); color: var(--cream); }
+  .job h3 span { color: var(--accent); font-style: italic; }
+  .job p { margin: 0; max-width: 46rem; }
+  .toolkit { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 3rem; }
+  .toolkit .tags { padding: 1.2rem; }
+
+  /* game */
+  .gsub { text-align: center; color: var(--grey); margin: -2rem 0 2.5rem; }
+  .gwin .bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gover .touch { display: none; }
+  @media (max-width: 760px) { .gwin .bar > span { display: none; } }
+  @media (pointer: coarse) { .gover .kb { display: none; } .gover .touch { display: block; } }
+  .gwin .bar b { white-space: nowrap; margin-left: auto; font-weight: normal; color: #ffe27a; }
+  .gstage { position: relative; background: #070605; display: flex; justify-content: center; overflow: hidden; }
+  #gcanvas { display: block; outline: none; }
+  .gover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem;
+    background: rgba(7,6,5,.55); border: 0; color: var(--cream); font: 400 2rem/1.1 var(--serif); width: 100%; }
+  .gover small { font: .8rem var(--mono); color: var(--grey); }
+  .gover[hidden] { display: none; }
+  .pad { display: none; grid-template-columns: repeat(3, 52px); gap: 6px; justify-content: center; padding: 1rem; border-top: 1px solid var(--line); }
+  .pad button { height: 46px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); color: var(--accent); font-size: 1.1rem;
+    touch-action: none; user-select: none; -webkit-user-select: none; }
+  .pad button:active { background: var(--accent); color: var(--bg); }
+  .pad [data-dir="u"] { grid-area: 1 / 2; }
+  .pad [data-dir="l"] { grid-area: 2 / 1; }
+  .pad [data-dir="d"] { grid-area: 2 / 2; }
+  .pad [data-dir="r"] { grid-area: 2 / 3; }
+  @media (pointer: coarse), (max-width: 760px) { .pad { display: grid; } }
+
+  .sign { color: #f1ead6; font: 1rem var(--mono); text-shadow: 0 0 8px #f1ead6; }
+  .gbtn { margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--cream);
+    font: .75rem var(--mono); padding: .2rem .7rem; }
+  .gbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .gwin .bar .gbtn + b { margin-left: .8rem; }
+  .gread { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(90%, 30rem);
+    background: rgba(18,17,16,.92); border: 1px solid var(--line); border-radius: 12px; padding: .8rem 1rem; text-align: center; pointer-events: none; }
+  .gread p { margin: 0; font: 400 1.35rem/1.25 var(--serif); color: var(--cream); overflow-wrap: anywhere; }
+  .gread small { color: var(--accent); font: .8rem var(--mono); }
+  .gread[hidden] { display: none; }
+  .gform { background: rgba(7,6,5,.85); font-size: 1.6rem; padding: 1rem; }
+  .gform input, .gform textarea { width: min(100%, 26rem); background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--cream); font: 1rem var(--sans); padding: .7rem .9rem; resize: none; }
+  .gform input:focus, .gform textarea:focus { outline: none; border-color: var(--accent); }
+  .gform small { font: .8rem var(--mono); color: var(--accent); min-height: 1em; }
+  .gform .frow { display: flex; gap: .6rem; }
+  .gnotes { border-top: 1px solid var(--line); padding: 1.4rem 1.6rem 1.6rem; }
+  .gnotes h3 { margin: 0 0 .8rem; font: 400 1.6rem var(--serif); color: var(--cream); }
+  .gnotes h3 span { font: .8rem var(--mono); color: var(--muted); vertical-align: middle; margin-left: .3rem; }
+  .gmode { margin: 0 0 1rem; font: .8rem var(--mono); color: var(--muted); }
+  .gmode[hidden] { display: none; }
+  #glist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .8rem;
+    max-height: 22rem; overflow-y: auto; }
+  #glist li { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; }
+  #glist p { margin: 0 0 .3rem; color: var(--cream); overflow-wrap: anywhere; }
+  #glist small { color: var(--muted); font: .75rem var(--mono); }
+
+  /* game: 1-bit sepia skin, like old dithered pixel games */
+  .gwin { --ink: #f1e2c2; --ib: #231811; background: var(--ib); border: 3px solid var(--ink); border-radius: 10px;
+    box-shadow: 0 0 0 3px var(--ib), 0 0 0 5px var(--ink); }
+  .gwin .bar { background: var(--ink); color: var(--ib); border-bottom: 3px solid var(--ib); font: .8rem Silkscreen, var(--mono); }
+  .gwin .bar i { background: var(--ib); border-radius: 0; width: 8px; height: 8px; }
+  .gwin .bar b { color: var(--ib); font: .8rem Silkscreen, var(--mono); }
+  .gbtn { border: 2px solid var(--ib); border-radius: 4px; color: var(--ib); font: .75rem Silkscreen, var(--mono); background: var(--ink); }
+  .gbtn:hover { background: var(--ib); color: var(--ink); border-color: var(--ib); }
+  .gstage { background: var(--ib); }
+  .gover { background: rgba(35,24,17,.55); color: var(--ib); font: 1.4rem Silkscreen, var(--mono); }
+  .gover > span { background: var(--ink); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 6px; padding: .5rem 1.2rem; }
+  .gover small { color: var(--ink); font: 1.15rem VT323, var(--mono); background: var(--ib); padding: 0 .4rem; }
+  .gread { background: var(--ink); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 6px; }
+  .gread p { font: 1.45rem/1.1 VT323, var(--mono); color: var(--ib); }
+  .gread small { font: .7rem Silkscreen, var(--mono); color: var(--ib); }
+  .gform { background: rgba(35,24,17,.88); }
+  .gform input, .gform textarea { background: var(--ink); color: var(--ib); border: 3px solid var(--ib); outline: 2px solid var(--ink);
+    border-radius: 4px; font: 1.25rem VT323, var(--mono); }
+  .gform input::placeholder, .gform textarea::placeholder { color: #7a6650; }
+  .gform small { color: var(--ink); font: 1rem VT323, var(--mono); }
+  .gwin .btn { border-radius: 4px; font: .8rem Silkscreen, var(--mono); }
+  .gwin .btn.primary { background: var(--ink); color: var(--ib); border: 3px solid var(--ib); outline: 2px solid var(--ink); }
+  .gwin .btn.ghost { background: var(--ib); color: var(--ink); border: 2px solid var(--ink); }
+  .pad { border-top: 3px solid var(--ink); }
+  .pad button { background: var(--ink); color: var(--ib); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 4px; }
+  .pad button:active { background: var(--ib); color: var(--ink); }
+  .gnotes { border-top: 3px solid var(--ink); }
+  .gnotes h3 { font: 1rem Silkscreen, var(--mono); color: var(--ink); }
+  .gnotes h3 span { color: #b9a688; }
+  .gmode { color: #b9a688; font: 1rem VT323, var(--mono); }
+  #glist li { background: var(--ink); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 4px; }
+  #glist p { color: var(--ib); font: 1.25rem/1.1 VT323, var(--mono); }
+  #glist small { color: #6b5640; font: .65rem Silkscreen, var(--mono); }
+
+  /* contact */
+  .contact { text-align: center; }
+  .contact p { color: var(--grey); max-width: 30rem; margin: -1.5rem auto 2.2rem; font-size: 1.1rem; }
+  .contact .actions { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; }
+  .socials { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem; font: .85rem var(--mono); color: var(--muted); }
+  .socials a:hover { color: var(--accent); }
+
+  footer { border-top: 1px solid var(--line); }
+  footer .wrap { padding-top: 2rem; padding-bottom: 3rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    color: var(--muted); font-size: .85rem; }
+  footer .serif { font: 1.2rem var(--serif); color: var(--grey); }
+
+  /* scroll reveal */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .7s, transform .7s; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 760px) {
+    body { font-size: 16px; }
+    nav .in { gap: .4rem 1rem; justify-content: center; flex-wrap: wrap; padding: .6rem 16px; }
+    .wip { margin: 0; flex-basis: 100%; justify-content: center; border: 0; padding: 0; font-size: .7rem; }
+    .grid, .toolkit { grid-template-columns: 1fr; }
+    .job { grid-template-columns: 1fr; gap: .2rem; }
+    nav a.l { font-size: .85rem; }
+    section.page { padding: 4.5rem 0; }
+  }
+
+  /* orange pixel cursor (mouse/trackpad only) */
+  #cur, .px { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 100; display: none; }
+  @media (pointer: fine) {
+    html, a, button, canvas { cursor: none !important; }
+    #cur, .px { display: block; }
+  }
+  #cur { width: 12px; height: 12px; margin: -6px 0 0 -6px; background: var(--accent);
+    box-shadow: 0 0 14px rgba(232,129,58,.6); transition: width .2s, height .2s, margin .2s, background .2s; }
+  #cur.big { width: 30px; height: 30px; margin: -15px 0 0 -15px; background: rgba(232,129,58,.25); outline: 2px solid var(--accent); }
+  #cur.hide { opacity: 0; }
+  .px { width: 22px; height: 22px; display: grid; place-items: center; background: var(--accent); color: #1a0f05;
+    font: 11px/1 var(--mono); z-index: 99; animation: pxfade .9s forwards; }
+  .px.dim { background: rgba(232,129,58,.45); }
+  @keyframes pxfade { 0% { opacity: .75; transform: scale(1); } 100% { opacity: 0; transform: scale(.4); } }
+
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } html { scroll-behavior: auto; } .px { display: none !important; } }
+</style>
+</head>
+<body>
+
+<header id="intro">
+  <canvas id="c" title="click to blink"></canvas>
+  <div id="title"><div id="name"></div><a id="sub" href="#about">[ scroll to enter ]</a></div>
+</header>
+
+<nav>
+  <div class="in">
+    <span class="wip"><i></i>Under maintenance · still building</span>
+    <a class="l" href="#about">About</a>
+    <a class="l" href="#projects">Projects</a>
+    <a class="l" href="#experience">Experience</a>
+    <a class="l" href="#game">Game</a>
+    <a class="l" href="#contact">Contact</a>
+  </div>
+</nav>
+
+<section class="page" id="about">
+  <div class="wrap">
+    <div class="intro2">
+      <canvas class="tiger-run tr" data-flip aria-hidden="true"></canvas>
+      <h1 class="reveal">Hi, I'm Begum. <span class="dim">I work where</span> AI, product &amp; <em>design</em> meet.</h1>
+      <canvas class="tiger-run bl" aria-hidden="true"></canvas>
+    </div>
+  </div>
+</section>
+
+<section class="page dots" id="projects">
+  <div class="wrap">
+    <h2 class="big reveal"><span class="dim">Selected</span> <em>projects</em>.</h2>
+    <div class="grid">
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/tenderlens</span></div>
+        <div class="body">
+          <h3>TenderLens</h3>
+          <p>Finds EU public tenders and checks if they suit a company. It pulls live notices from the TED API and summarises the compliance requirements with a custom RAG pipeline running on local LLMs.</p>
+          <div class="tags"><span>python</span><span>rag</span><span>ollama</span><span>react</span><span>postgres</span></div>
+          <span class="go">84% pass rate on my own evaluation suite (38/45)</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/near-miss</span></div>
+        <div class="body">
+          <h3>In Store Sight</h3>
+          <p>Shows brands the sales they almost won. Computer vision watches a shop shelf, tracks what shoppers look at, pick up and put back, matches it with the till, and an LLM suggests what the brand should change.</p>
+          <div class="tags"><span>python</span><span>yolov8-pose</span><span>mediapipe</span><span>ollama</span><span>react</span></div>
+          <span class="go">Built at EAT_HACK with a team of three</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/slipp</span></div>
+        <div class="body">
+          <h3>Slipp</h3>
+          <p>Receipts in, loyalty rewards out: one app instead of a loyalty app for every brand. An LLM reads receipt photos into structured data, plain code double-checks the totals, and my own eval set compares models on accuracy and cost.</p>
+          <div class="tags"><span>python</span><span>claude api</span><span>ollama</span><span>pydantic</span><span>evals</span></div>
+          <span class="go">In progress: extraction and evals built</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/spotr</span></div>
+        <div class="body">
+          <h3>Spotr</h3>
+          <p>A location-based shot-planning app for content creators. You pick a "vibe" in a short quiz and see real photos taken at each spot. I led the visual design, including a mouse-driven spiral photo carousel and polaroid-style UI.</p>
+          <div class="tags"><span>hackathon</span><span>ui design</span><span>ai prototyping</span></div>
+          <span class="go">Best Design Award, Beauty Decoded Hackathon</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/vehicle-tracking</span></div>
+        <div class="body">
+          <h3>Colour-based vehicle tracking</h3>
+          <p>Real-time car detection with MobileNet-SSD, plus HSV colour filtering and per-object tracking to follow yellow vehicles reliably through changing daylight and busy backgrounds.</p>
+          <div class="tags"><span>python</span><span>opencv</span><span>computer vision</span></div>
+          <span class="go">Detection + ID tracking + colour checks</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/card-deck-sim</span></div>
+        <div class="body">
+          <h3>Card Deck Simulation</h3>
+          <p>A JavaFX desktop app built by a seven-person Scrum team. I designed the core architecture (Table, Deck, Group, Card), keeping game logic separate from the UI, with drag and drop and saved layouts.</p>
+          <div class="tags"><span>java</span><span>javafx</span><span>maven</span><span>scrum</span></div>
+          <span class="go">Core OOP architecture</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/projects/zombie-dance-floor</span></div>
+        <div class="body">
+          <h3>Zombie Dance Floor</h3>
+          <p>A 2D game inspired by Plants vs. Zombies, with my own gameplay mechanics, UI systems and animations.</p>
+          <div class="tags"><span>unity</span><span>c#</span><span>game design</span></div>
+          <span class="go">Mechanics, UI &amp; animation</span>
+        </div>
+      </article>
+      <article class="win card reveal">
+        <div class="bar"><i></i><i></i><i></i><span>~/talks/lovelace-colloquium</span></div>
+        <div class="body">
+          <h3>BCSWomen Lovelace posters</h3>
+          <p>Research posters presented to 250–300 attendees. 2024: designer babies and genome editing. 2025: deep learning for facial expressions and micro-expressions in animation.</p>
+          <div class="tags"><span>research</span><span>ai</span><span>speaking</span></div>
+          <span class="go">Presented in 2024 &amp; 2025</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="experience">
+  <div class="wrap">
+    <h2 class="big reveal"><span class="dim">Where I've</span> <em>worked</em>.</h2>
+    <div class="jobs">
+      <div class="job reveal">
+        <span class="when">Apr 2026 – Oct 2026</span>
+        <div><h3>Product Manager <span>· Tenderbase</span></h3>
+          <p>Turned customer feedback and market analysis into the product roadmap. Cut unresolved client issues by 20%, raised onboarding completion by 30%, and ran Google Ads campaigns for go-to-market.</p></div>
+      </div>
+      <div class="job reveal">
+        <span class="when">Jun 2026 – now</span>
+        <div><h3>Ambassador <span>· HerFuture</span></h3>
+          <p>Building a women-in-tech ambassador network across Wales and London from scratch through outreach and events.</p></div>
+      </div>
+      <div class="job reveal">
+        <span class="when">Dec 2025 – Apr 2026</span>
+        <div><h3>Project Manager <span>· CF Training &amp; Consulting, Ankara</span></h3>
+          <p>Planned a 24-month TÜBİTAK R&amp;D project for an AI opportunity-detection platform: 5 work packages, milestones, risk gates, and the funding case.</p></div>
+      </div>
+      <div class="job reveal">
+        <span class="when">Jun 2023 – Aug 2023</span>
+        <div><h3>Software Development Intern <span>· Argetek</span></h3>
+          <p>Delivered 2 client-ready Java applications on schedule and evaluated 200+ test cases.</p></div>
+      </div>
+    </div>
+
+    <div class="toolkit reveal">
+      <div class="win"><div class="bar"><i></i><i></i><i></i><span>ai-and-data</span></div>
+        <div class="tags"><span>generative ai</span><span>llms</span><span>rag pipelines</span><span>prompt engineering</span><span>retrieval</span><span>ollama</span><span>claude</span><span>opencv</span></div></div>
+      <div class="win"><div class="bar"><i></i><i></i><i></i><span>product</span></div>
+        <div class="tags"><span>roadmapping</span><span>backlogs</span><span>customer discovery</span><span>go-to-market</span><span>google ads</span><span>productboard</span><span>notion</span><span>jira</span><span>figma</span></div></div>
+      <div class="win"><div class="bar"><i></i><i></i><i></i><span>code</span></div>
+        <div class="tags"><span>python</span><span>java</span><span>typescript</span><span>javascript</span><span>sql</span><span>react</span><span>next.js</span><span>express</span><span>tailwind</span><span>docker</span><span>unity</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="game">
+  <div class="wrap">
+    <h2 class="big reveal"><span class="dim">Take a</span> <em>walk</em>.</h2>
+    <p class="gsub reveal">A tiny ASCII jungle. Find the fireflies, read the <b class="sign">?</b> signs, and leave a note for the next visitor.</p>
+    <div class="win gwin reveal">
+      <div class="bar"><i></i><i></i><i></i><span>~/game/jungle-walk</span><button id="gnote" class="gbtn" type="button">✎ leave a note</button><b id="ghud">fireflies 0/10</b></div>
+      <div class="gstage">
+        <canvas id="gcanvas" tabindex="0" aria-label="ASCII jungle mini game"></canvas>
+        <button id="gstart" class="gover"><span>▶ Click to play</span><small class="kb">arrows or WASD to move · N to leave a note · esc to stop</small><small class="touch">use the arrows below to move</small></button>
+        <div id="gread" class="gread" hidden></div>
+        <form id="gform" class="gover gform" hidden>
+          <span>Leave a note here</span>
+          <input id="gname" maxlength="20" placeholder="your name" autocomplete="off" required>
+          <textarea id="gtext" maxlength="140" rows="3" placeholder="say hi, leave a tip, or a tiny poem (140 characters)" required></textarea>
+          <small id="gerr" aria-live="polite"></small>
+          <div class="frow"><button type="button" id="gcancel" class="btn ghost">Cancel</button><button class="btn primary">Pin it 📌</button></div>
+        </form>
+        <div id="gmsg" class="gover" hidden><span>You found every firefly 🐯</span><button id="gagain" class="btn primary">Play again</button></div>
+      </div>
+      <div class="pad" aria-label="Move">
+        <button data-dir="u" aria-label="Up">▲</button>
+        <button data-dir="l" aria-label="Left">◀</button><button data-dir="d" aria-label="Down">▼</button><button data-dir="r" aria-label="Right">▶</button>
+      </div>
+      <div class="gnotes">
+        <h3>Notes from visitors <span id="gcount">0</span></h3>
+        <p id="gmode" class="gmode">Preview mode: notes are only saved in this browser until the online guestbook is connected.</p>
+        <ul id="glist"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page contact dots" id="contact">
+  <div class="wrap reveal">
+    <h2 class="big">Let's build something <em>wild</em>.</h2>
+    <p>Open to roles in AI, product and design. Have an idea or a role in mind? My inbox is open.</p>
+    <div class="actions">
+      <a class="btn primary" href="mailto:bskaplanhan@gmail.com">bskaplanhan@gmail.com</a>
+      <a class="btn ghost" href="https://linkedin.com/in/begum-sultan-kaplanhan" target="_blank" rel="noopener">LinkedIn ↗</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span class="serif">Begum Sultan Kaplanhan<em>.</em></span>
+    <span>© 2026 · made with ASCII &amp; stripes</span>
+  </div>
+</footer>
+
+<script src="tiger.js"></script>
+<script src="tiger-frames.js"></script>
+<script src="tiger-run.js"></script>
+<script src="notes.js"></script>
+<script src="game.js"></script>
+<script>
+// Fade sections in as they scroll into view
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: .12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// Orange pixel cursor: a square that follows the mouse, leaving grid-snapped pixels that fade out
+const cur = document.createElement('div'); cur.id = 'cur'; document.body.append(cur);
+const GRID = 24, CHARS = ' .:*+#';
+let lastCell = '';
+addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  cur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  cur.classList.remove('hide');
+  cur.classList.toggle('big', !!e.target.closest('a, button, #c'));
+  const cx = Math.floor(e.clientX / GRID), cy = Math.floor(e.clientY / GRID), cell = cx + ',' + cy;
+  if (cell === lastCell) return;
+  lastCell = cell;
+  const p = document.createElement('span');
+  p.className = 'px' + (Math.random() < .4 ? ' dim' : '');
+  p.textContent = CHARS[Math.random() * CHARS.length | 0];
+  p.style.translate = `${cx * GRID}px ${cy * GRID}px`; // separate from transform, which the fade animation scales
+  document.body.append(p);
+  p.addEventListener('animationend', () => p.remove());
+});
+document.addEventListener('mouseleave', () => cur.classList.add('hide'));
+</script>
+</body>
+</html>
