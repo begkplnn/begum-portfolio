@@ -1,13 +1,13 @@
 // Visitor notes storage.
 // Fill in SUPABASE_URL and SUPABASE_ANON_KEY (see supabase-notes.sql) to share notes with every visitor.
 // Until then, notes are only saved in this browser.
-const SUPABASE_URL = '';
-const SUPABASE_ANON_KEY = '';
+const SUPABASE_URL = 'https://pquhrzohsyzhlplxngew.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9CR8SIYmZuKpmrX562UKfQ_S8jISPt-'; // publishable key: safe to ship in the page
 
 window.Notes = (() => {
   const online = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
   const LOCAL = 'jungle-notes', LAST = 'jungle-last-note';
-  const headers = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' };
+  const headers = { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
   const welcome = [{ x: -1, y: -1, name: 'begum', text: 'Welcome to my jungle! Leave a note anywhere 🐯', created_at: '2026-11-01T00:00:00Z' }];
 
   const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL)) || []; } catch { return []; } };
