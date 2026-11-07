@@ -232,8 +232,16 @@
   #glist small { color: #6b5640; font: .65rem Silkscreen, var(--mono); }
 
   /* contact */
-  .contact { text-align: center; }
-  .contact p { color: var(--grey); max-width: 30rem; margin: -1.5rem auto 2.2rem; font-size: 1.1rem; }
+  .contact { text-align: center; position: relative; isolation: isolate; overflow: hidden; padding: 9rem 0; }
+  .contact::before { content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(var(--bg2), rgba(11,9,6,.15) 30%, rgba(11,9,6,.3) 70%, var(--bg)),
+      radial-gradient(ellipse at center, rgba(11,9,6,.5), transparent 60%),
+      url(valley.webp) center 55% / cover no-repeat; }
+  @media (max-width: 700px) { .contact::before { background-image: linear-gradient(var(--bg2), rgba(11,9,6,.15) 30%, rgba(11,9,6,.3) 70%, var(--bg)),
+      radial-gradient(ellipse at center, rgba(11,9,6,.5), transparent 60%), url(valley-sm.webp); } }
+  .contact h2.big { text-shadow: 0 2px 24px rgba(0,0,0,.6); }
+  .contact p { text-shadow: 0 1px 12px rgba(0,0,0,.8); }
+  .contact p { color: var(--cream); max-width: 30rem; margin: -1.5rem auto 2.2rem; font-size: 1.1rem; }
   .contact .actions { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; }
   .socials { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem; font: .85rem var(--mono); color: var(--muted); }
   .socials a:hover { color: var(--accent); }
