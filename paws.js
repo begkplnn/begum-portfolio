@@ -7,12 +7,12 @@ const cards = [...section.querySelectorAll('article.card[data-art]')];
 if (!chain || !cards.length) return;
 section.classList.add('paws-on');
 const hint = section.querySelector('.chain-hint');
-if (hint && matchMedia('(hover: none)').matches) hint.textContent = 'Swipe along the chain. Tap a paw to open it.';
+if (hint && matchMedia('(hover: none)').matches) hint.textContent = 'Swipe along the chain. Tap a tiger to open it.';
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ---------- LCD screens: 44×30 pixel buffer, drawn as 3×3 dots on a 4×4 grid like a real LCD ----------
-const GW = 44, GH = 30, DOT = 4, buf = new Uint8Array(GW * GH);
-const set = (x, y, v = 1) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < GW && y < GH) buf[y * GW + x] = v; };
+// ---------- LCD screens: 44×40 pixel buffer (art drawn in a 44×30 band, centred), drawn as 3×3 dots on a 4×4 grid like a real LCD ----------
+const GW = 44, GH = 40, OY = 5, DOT = 4, buf = new Uint8Array(GW * GH);
+const set = (x, y, v = 1) => { x = Math.round(x); y = Math.round(y) + OY; if (x >= 0 && y >= 0 && x < GW && y < GH) buf[y * GW + x] = v; };
 const rect = (x, y, w, h, v = 1) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) set(x + i, y + j, v); };
 const box = (x, y, w, h) => { rect(x, y, w, 1); rect(x, y + h - 1, w, 1); rect(x, y, 1, h); rect(x + w - 1, y, 1, h); };
 const line = (x0, y0, x1, y1, step = 1) => {
@@ -108,18 +108,18 @@ function paint(cv, art, t) {
 }
 const lcd = () => { const cv = document.createElement('canvas'); cv.className = 'lcd'; cv.width = GW * DOT; cv.height = GH * DOT; cv.setAttribute('aria-hidden', 'true'); return cv; };
 // shell finishes; projects take them in turn, or a card can pick one with data-color="silver"
-const COLORS = ['orange', 'bronze', 'silver'];
+const COLORS = ['tiger'];
 const paint3d = (b, color) => { b.querySelector('img').src = `paw-${color}.webp`; b.style.setProperty('--img', `url(paw-${color}.webp)`); };
 const device = color => {
   const b = document.createElement('span'); b.className = 'body3d';
-  b.innerHTML = '<img alt="" width="600" height="710"><span class="shine"></span>';
+  b.innerHTML = '<img alt="" width="600" height="953"><span class="shine"></span>';
   const cv = lcd(); b.insertBefore(cv, b.lastChild);
   paint3d(b, color);
   return { b, cv };
 };
 
 // ---------- the chain: paws hang by their keyring straight off an oval-link chain ----------
-const RING = 55 / 600; // centre of the keyring hole, as a fraction of the paw's width
+const RING = 17 / 600; // top of the ball chain clasp, as a fraction of the device's width
 const LINK_H = 22, LINK_W = LINK_H * 114 / 56; // chain.webp holds one flat link and one edge-on link and repeats seamlessly
 const track = document.createElement('div'); track.className = 'track';
 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.classList.add('links');
@@ -157,7 +157,7 @@ function layout() {
     p.k = 13;
   });
   const grow = matchMedia('(hover: hover)').matches ? 1.3 : 1; // room for a focused paw at 1.3× where hovering exists
-  chain.style.height = y0 + sag + pw * 710 / 600 * grow + 60 + 'px';
+  chain.style.height = y0 + sag + pw * 953 / 600 * grow + 60 + 'px';
 
   // lay the link tiles end to end along the curve, each turned to the curve's slope
   const pts = [[0, yAt(0), 0]];
