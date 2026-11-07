@@ -31,6 +31,7 @@
   #title.on { opacity: 1; }
   #name { font-size: clamp(1.4rem, 4vw, 2.4rem); letter-spacing: .3em; }
   #name::after { content: "_"; animation: blink 1s steps(1) infinite; }
+  @media (max-width: 520px) { #name { font-size: 1.25rem; letter-spacing: .14em; } }
   #sub { color: #7a5530; font-size: .85rem; margin-top: .5rem; letter-spacing: .15em; display: inline-block; }
   #sub:hover { color: var(--accent2); }
   @keyframes blink { 50% { opacity: 0; } }

@@ -129,7 +129,7 @@ img.onload = () => {
   start = performance.now(); blinkAt = start + 4300;
   requestAnimationFrame(frame);
   setTimeout(() => {
-    const title = document.getElementById('title'), el = document.getElementById('name'), text = 'BEGUM';
+    const title = document.getElementById('title'), el = document.getElementById('name'), text = 'BEGUM KAPLANHAN';
     title.classList.add('on');
     [...text].forEach((ch, i) => setTimeout(() => el.textContent += ch, 160 * i));
   }, 2500);
