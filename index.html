@@ -87,6 +87,56 @@
   .tags span { font: .75rem var(--mono); color: var(--green); border: 1px solid var(--line); border-radius: 999px; padding: .2rem .65rem; }
   .card .go { color: var(--accent); font-size: .95rem; }
 
+  /* project paws: tamagotchis hanging from a silver chain (built by paws.js from the cards) */
+  .chain-hint { text-align: center; font: .8rem var(--mono); color: var(--muted); margin: -2rem 0 1.5rem; }
+  .chain-hint, .chain { display: none; }
+  .paws-on .chain-hint { display: block; }
+  .paws-on .chain { display: block; }
+  .paws-on .grid { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .chain { position: relative; height: 400px; }
+  .chain svg.links { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; filter: drop-shadow(0 6px 5px rgba(0,0,0,.55));
+    -webkit-mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+  .paw { position: absolute; top: 0; width: 118px; padding: 0; border: 0; background: none; transform-origin: 50% 0; will-change: transform; }
+  .paw .body3d { position: relative; display: block; transition: filter .35s; filter: drop-shadow(0 16px 14px rgba(0,0,0,.55)); }
+  .paw img, .bigpaw img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+  .shine { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light;
+    -webkit-mask: var(--img) center / 100% 100% no-repeat; mask: var(--img) center / 100% 100% no-repeat;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.9) 48%, transparent 62%) calc(50% + var(--sx, 0) * 1%) 0 / 260% 100% no-repeat; }
+  .lcd { position: absolute; left: 28.15%; top: 51.07%; width: 44.28%; height: 25.7%; border-radius: 4%; image-rendering: pixelated; }
+  .paw .lbl { display: block; margin: .55rem -8px 0; text-align: center; overflow-wrap: anywhere; font: .7rem/1.3 var(--mono); color: var(--muted); transition: color .2s; }
+  .paw:hover .lbl, .paw:focus-visible .lbl { color: var(--accent); }
+  .paw:hover .body3d, .paw:focus-visible .body3d { filter: drop-shadow(0 16px 14px rgba(0,0,0,.55)) brightness(1.08); }
+  .paw:focus-visible { outline: none; }
+  .paw.dim .body3d { filter: drop-shadow(0 16px 14px rgba(0,0,0,.55)) brightness(.62) saturate(.8); }
+  .paw.dim .lbl { opacity: .45; }
+  .paw .lbl { transition: color .2s, opacity .3s; }
+  .paw:focus-visible .lbl { text-decoration: underline; }
+
+  /* opened paw */
+  .pawview { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 24px 16px;
+    background: rgba(8,6,4,.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); overflow-y: auto; }
+  .pawview.open { display: flex; }
+  .pv-in { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 480px); gap: 2.5rem; align-items: center; max-width: 900px; width: 100%; margin: auto; }
+  .bigpaw { position: relative; transform-origin: 50% -40px; animation: swingin 1.4s cubic-bezier(.3,.7,.4,1); }
+  .bigpaw .body3d { filter: drop-shadow(0 30px 26px rgba(0,0,0,.6)); }
+  .bigpaw .key { position: absolute; top: 81.5%; width: 11.5%; aspect-ratio: 1; border-radius: 50%; border: 0; padding: 0; background: transparent; }
+  .bigpaw .key:hover, .bigpaw .key:focus-visible { background: rgba(232,129,58,.28); outline: 2px solid var(--accent); }
+  .bigpaw .key:active { transform: scale(.92); }
+  .bigpaw .k1 { left: 29.2%; } .bigpaw .k2 { left: 44.3%; } .bigpaw .k3 { left: 60.8%; }
+  .pv-keys { display: flex; justify-content: center; gap: 1.6rem; margin-top: 1rem; font: .72rem var(--mono); color: var(--muted); }
+  .pv-card .card:hover { transform: none; }
+  .pv-card .card { opacity: 1; transform: none; animation: cardin .5s .15s both; }
+  @keyframes swingin { 0% { transform: translateY(-60px) rotate(-14deg); opacity: 0; } 30% { opacity: 1; } 45% { transform: rotate(8deg); } 65% { transform: rotate(-4deg); } 82% { transform: rotate(1.5deg); } 100% { transform: none; } }
+  @keyframes cardin { from { opacity: 0; transform: translateX(20px); } }
+  @media (max-width: 760px) {
+    .chain { overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; margin: 0 -20px; -webkit-overflow-scrolling: touch; }
+    .chain .track { position: relative; height: 100%; }
+    .paw { width: 104px; scroll-snap-align: center; }
+    .pv-in { grid-template-columns: 1fr; gap: 1.4rem; }
+    .bigpaw { width: min(240px, 70vw); margin: 0 auto; }
+  }
+  @media (prefers-reduced-motion: reduce) { .bigpaw, .pv-card .card { animation: none; } }
+
   /* experience */
   .jobs { border-top: 1px solid var(--line); }
   .job { display: grid; grid-template-columns: 13rem 1fr; gap: 1.5rem; padding: 1.6rem 0; border-bottom: 1px solid var(--line); }
@@ -256,8 +306,10 @@
 <section class="page dots" id="projects">
   <div class="wrap">
     <h2 class="big reveal"><span class="dim">Selected</span> <em>projects</em>.</h2>
+    <p class="chain-hint reveal">Swing them with your cursor. Click a paw to open it.</p>
+    <div class="chain reveal" id="chain"></div>
     <div class="grid">
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="tender">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/tenderlens</span></div>
         <div class="body">
           <h3>TenderLens</h3>
@@ -266,7 +318,7 @@
           <span class="go">84% pass rate on my own evaluation suite (38/45)</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="sight">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/near-miss</span></div>
         <div class="body">
           <h3>In Store Sight</h3>
@@ -275,7 +327,7 @@
           <span class="go">Built at EAT_HACK with a team of three</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="slipp">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/slipp</span></div>
         <div class="body">
           <h3>Slipp</h3>
@@ -284,7 +336,7 @@
           <span class="go">In progress: extraction and evals built</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="spotr">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/spotr</span></div>
         <div class="body">
           <h3>Spotr</h3>
@@ -293,7 +345,7 @@
           <span class="go">Best Design Award, Beauty Decoded Hackathon</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="car">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/vehicle-tracking</span></div>
         <div class="body">
           <h3>Colour-based vehicle tracking</h3>
@@ -302,7 +354,7 @@
           <span class="go">Detection + ID tracking + colour checks</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="cards">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/card-deck-sim</span></div>
         <div class="body">
           <h3>Card Deck Simulation</h3>
@@ -311,7 +363,7 @@
           <span class="go">Core OOP architecture</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="zombie">
         <div class="bar"><i></i><i></i><i></i><span>~/projects/zombie-dance-floor</span></div>
         <div class="body">
           <h3>Zombie Dance Floor</h3>
@@ -320,7 +372,7 @@
           <span class="go">Mechanics, UI &amp; animation</span>
         </div>
       </article>
-      <article class="win card reveal">
+      <article class="win card reveal" data-art="poster">
         <div class="bar"><i></i><i></i><i></i><span>~/talks/lovelace-colloquium</span></div>
         <div class="body">
           <h3>BCSWomen Lovelace posters</h3>
@@ -425,6 +477,7 @@
 <script src="tiger-run.js"></script>
 <script src="notes.js"></script>
 <script src="game.js"></script>
+<script src="paws.js"></script>
 <script>
 // Fade sections in as they scroll into view
 const io = new IntersectionObserver(es => es.forEach(e => {
