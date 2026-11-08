@@ -17,7 +17,7 @@ let cols, rows, fs, cw, dpr;
 
 function resize() {
   dpr = devicePixelRatio || 1;
-  cols = innerWidth < 700 ? 130 : 240;
+  cols = innerWidth < 700 ? 130 : 200;
   rows = Math.round(cols * CH / IW * 0.6);
   off.width = cols; off.height = rows;
   fs = Math.min(innerWidth * 0.96 / (cols * 0.6), innerHeight * 0.6 / rows);
@@ -68,19 +68,19 @@ function render() {
   const d = g.getImageData(0, 0, cols, rows).data;
   o.setTransform(dpr, 0, 0, dpr, 0, 0);
   o.fillStyle = '#0b0906'; o.fillRect(0, 0, cols * cw, rows * fs);
-  o.font = `${fs}px ui-monospace, Menlo, Consolas, monospace`; o.textBaseline = 'top';
+  o.font = `bold ${fs}px ui-monospace, Menlo, Consolas, monospace`; o.textBaseline = 'top';
   for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
     const i = (y * cols + x) * 4;
     const nx = x / cols - .5, ny = y / rows - .5;
-    const fade = Math.max(0, Math.min(1, (.5 - Math.abs(nx)) * 7) * Math.min(1, (.5 - Math.abs(ny)) * 5));
+    const fade = Math.max(0, Math.min(1, (.5 - Math.abs(nx)) * 9) * Math.min(1, (.5 - Math.abs(ny)) * 7));
     const r = d[i], gr = d[i + 1], b = d[i + 2];
-    const L = Math.pow((0.3 * r + 0.59 * gr + 0.11 * b) / 255, 0.8) * fade * (0.95 + 0.1 * hash(x, y));
-    const idx = Math.min(RAMP.length - 1, L * 1.15 * (RAMP.length - 1) | 0);
+    const L = Math.pow((0.3 * r + 0.59 * gr + 0.11 * b) / 255, 0.65) * fade * (0.95 + 0.1 * hash(x, y));
+    const idx = Math.min(RAMP.length - 1, L * 1.35 * (RAMP.length - 1) | 0);
     if (!idx) continue;
     // keep the photo's hue but lift it so dark fur still reads on black
     const avg = (r + gr + b) / 3, sat = 1.6;
     const sr = Math.max(0, avg + (r - avg) * sat), sg = Math.max(0, avg + (gr - avg) * sat), sb = Math.max(0, avg + (b - avg) * sat);
-    const m = Math.max(sr, sg, sb, 1), lift = (110 + 145 * Math.min(1, L * 1.3)) / m;
+    const m = Math.max(sr, sg, sb, 1), lift = (150 + 105 * Math.min(1, L * 1.4)) / m;
     o.fillStyle = `rgb(${Math.min(255, sr * lift) | 0},${Math.min(255, sg * lift) | 0},${Math.min(255, sb * lift) | 0})`;
     o.fillText(RAMP[idx], x * cw, y * fs);
   }

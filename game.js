@@ -1,4 +1,4 @@
-// ASCII jungle walk: move with arrows / WASD / on-screen pad, collect the fireflies, read and leave notes
+// Pixel forest walk: move with arrows / WASD / on-screen pad, collect the fireflies, read and leave notes
 (() => {
 const cv = document.getElementById('gcanvas'), ctx = cv.getContext('2d');
 const hud = document.getElementById('ghud'), overlay = document.getElementById('gstart'), msg = document.getElementById('gmsg');
@@ -107,15 +107,14 @@ form.addEventListener('submit', async e => {
   } catch { ferr.textContent = 'Could not save your note. Please try again.'; }
 });
 
-// canvas sizing
-let fs, cw, cols, rows, dpr;
+// canvas sizing: whole 16px tiles
+let cols, rows, dpr;
 function resize() {
   dpr = devicePixelRatio || 1;
   const w = cv.parentElement.clientWidth;
-  fs = w < 600 ? 13 : 16; cw = fs * .6;
-  cols = Math.floor(w / cw); rows = w < 600 ? 26 : 32;
-  cv.width = cols * cw * dpr; cv.height = rows * fs * dpr;
-  cv.style.width = cols * cw + 'px'; cv.style.height = rows * fs + 'px';
+  cols = Math.min(W, Math.floor(w / TS)); rows = w < 600 ? 24 : 32;
+  cv.width = cols * TS * dpr; cv.height = rows * TS * dpr;
+  cv.style.width = cols * TS + 'px'; cv.style.height = rows * TS + 'px';
 }
 
 // input
@@ -139,9 +138,11 @@ document.getElementById('gagain').addEventListener('click', () => { reset(); sta
 
 let lastStep = 0;
 function step(now) {
+  moving = held.size > 0 && now - lastStep < STEP_MS * 3;
   if (!held.size || now - lastStep < STEP_MS) return;
   lastStep = now;
   const dx = (held.has('r') ? 1 : 0) - (held.has('l') ? 1 : 0), dy = (held.has('d') ? 1 : 0) - (held.has('u') ? 1 : 0);
+  facing = dx > 0 ? 'right' : dx < 0 ? 'left' : dy < 0 ? 'up' : 'down';
   if (walkable(player.x + dx, player.y + dy)) { player.x += dx; player.y += dy; }
   else if (dx && walkable(player.x + dx, player.y)) player.x += dx;
   else if (dy && walkable(player.x, player.y + dy)) player.y += dy;
@@ -152,79 +153,204 @@ function step(now) {
   }
 }
 
-// drawing: 1-bit sepia. Two colours only; light and dark are made with ordered dithering.
-const INK = '#f1e2c2', BG = '#231811';
-const GRASS = ['|', '/', '\\', '"', ',', "'", ';'];
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
-const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
-function tileChar(tile, x, y, s, t) {
-  if (tile === T.GRASS) {
-    const wind = Math.sin(t * 1.8 + x * .25 + y * .12 + s * 2);
-    return s < .55 ? (wind > .45 ? '/' : wind < -.45 ? '\\' : '|') : GRASS[3 + (s * 40 | 0) % 4];
+// drawing: top-down pixel art, all made in code. Each tile is 8×8 art pixels, shown at 2× (16px).
+const A = 8, Z = 2, TS = A * Z;
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const PAL = {
+  [T.GRASS]: ['#86742e', '#958234', '#a3903a', '#b29e44'].map(hex),
+  [T.FLOWER]: ['#86742e', '#958234', '#a3903a', '#b29e44'].map(hex),
+  [T.TREE]: ['#3e2f17', '#48371b', '#52401f', '#5c4823'].map(hex),
+  [T.WATER]: ['#2a5482', '#2f5d8c', '#346696', '#3a6f9f'].map(hex),
+  [T.SAND]: ['#bfa66c', '#c9b27a', '#d2bd85', '#dccb97'].map(hex),
+  [T.GROUND]: ['#8a643a', '#987042', '#a67c4a', '#b38954'].map(hex),
+};
+const FOAM = hex('#a9d2ea');
+
+// the whole world painted once into an offscreen canvas, one pixel per art pixel
+const base = document.createElement('canvas');
+function paintWorld() {
+  base.width = W * A; base.height = H * A;
+  const b = base.getContext('2d'), img = b.createImageData(base.width, base.height), d = img.data;
+  for (let py = 0; py < H * A; py++) for (let px = 0; px < W * A; px++) {
+    // ragged borders: near a tile edge, borrow the neighbour's ground now and then
+    const jx = px + ((hash(px, py, 31) - .5) * 4 | 0), jy = py + ((hash(px, py, 37) - .5) * 4 | 0);
+    let tile = at(jx >> 3, jy >> 3), own = at(px >> 3, py >> 3);
+    if (own === T.WATER || tile === T.WATER) tile = own; // keep shorelines true to where you can walk
+    const r = hash(px, py, 5), v = fbm(px * .03, py * .03, 21) + (r - .5) * .22;
+    const k = Math.max(0, Math.min(3, (v - .22) * 7 | 0));
+    let c = PAL[tile][k];
+    if (tile === T.WATER) { // foam where the water meets land
+      const lx = px & 7, ly = py & 7, tx = px >> 3, ty = py >> 3;
+      const edge = (ly === 0 && at(tx, ty - 1) !== T.WATER) || (lx === 0 && at(tx - 1, ty) !== T.WATER) ||
+                   (lx === 7 && at(tx + 1, ty) !== T.WATER) || (ly === 7 && at(tx, ty + 1) !== T.WATER);
+      if (edge && r < .8) c = FOAM;
+      else if (ly === 1 && at(tx, ty - 1) !== T.WATER) c = PAL[T.WATER][0]; // a little shadow under the bank
+    }
+    const i = (py * W * A + px) * 4; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255;
   }
-  if (tile === T.WATER) { const w = Math.sin(t * 1.3 + x * .45 - y * .2 + s) + Math.sin(t * .8 - x * .15 + y * .5); return w > 1.2 ? '~' : w > .7 ? '-' : ''; }
-  if (tile === T.TREE) return s < .45 ? '^' : s < .8 ? 'A' : '*';
-  if (tile === T.SAND) return s < .5 ? '.' : ':';
-  if (tile === T.FLOWER) return 'o';
-  return s < .5 ? '.' : ',';
+  b.putImageData(img, 0, 0);
+  // grass tufts: a light blade tip over two dark ones
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = map[y * W + x]; if (t !== T.GRASS && t !== T.FLOWER) continue;
+    for (let j = 0; j < 2; j++) {
+      if (hash(x, y, 60 + j) < .45) continue;
+      const gx = x * A + (hash(x, y, 70 + j) * 6 | 0), gy = y * A + 1 + (hash(x, y, 80 + j) * 6 | 0);
+      b.fillStyle = '#5f5f22'; b.fillRect(gx, gy + 1, 1, 1); b.fillRect(gx + 2, gy + 1, 1, 1);
+      b.fillStyle = '#c9b95c'; b.fillRect(gx + 1, gy, 1, 1);
+    }
+  }
+  // flowers: a plus of petals with a yellow middle
+  const PETAL = ['#e0503c', '#f4efe0', '#f2d24b', '#d77bd0'];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y * W + x] === T.FLOWER) {
+    const s = shade[y * W + x], fx = x * A + 2 + (s * 4 | 0), fy = y * A + 2 + (s * 13 % 4 | 0);
+    b.fillStyle = PETAL[s * 37 % 4 | 0]; b.fillRect(fx - 1, fy, 3, 1); b.fillRect(fx, fy - 1, 1, 3);
+    b.fillStyle = '#f2d24b'; b.fillRect(fx, fy, 1, 1);
+  }
 }
-function cellBox(px, py, w, h) { ctx.fillStyle = INK; ctx.fillRect(px - 1, py - 1, w + 2, h + 2); ctx.fillStyle = BG; }
+
+// trees: pines and round leafy trees, a few already autumn orange. Three sway poses each.
+function sprite(w, h, fn) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); fn((x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); }); return c;
+}
+function swayed(src, k) { // shift the top of the crown sideways by k pixels
+  const c = document.createElement('canvas'); c.width = src.width + 2; c.height = src.height;
+  const g = c.getContext('2d'), cut = Math.round(src.height * .45);
+  g.drawImage(src, 0, cut, src.width, src.height - cut, 1, cut, src.width, src.height - cut);
+  g.drawImage(src, 0, 0, src.width, cut, 1 + k, 0, src.width, cut);
+  return c;
+}
+function pine(seed) {
+  const [ol, dk, md, lt] = ['#132a14', '#1d3f1d', '#2b5a28', '#45803a'];
+  return sprite(11, 16, put => {
+    for (let y = 0; y < 13; y++) {
+      const hw = Math.min(5, 1 + (y % 4) + (y >> 2) * .8 | 0);
+      for (let x = -hw; x <= hw; x++) {
+        const edge = x === -hw || x === hw || y % 4 === 3, r = hash(x, y, seed);
+        put(5 + x, y, edge ? ol : x < 0 ? (r < .25 ? lt : md) : (r < .2 ? md : dk));
+      }
+    }
+    for (let y = 13; y < 16; y++) { put(5, y, '#4a3020'); put(4, y, '#3a2416'); }
+  });
+}
+const LEAVES = {
+  orange: ['#4a1f08', '#9a4413', '#d0691c', '#f0a040'],
+  amber: ['#4a2e06', '#a06a12', '#d89a22', '#f4c858'],
+  red: ['#3e1008', '#88281a', '#b8402a', '#e07548'],
+  green: ['#163016', '#2a5a26', '#3a7a32', '#62a548'],
+};
+function leafy(seed, colour) {
+  const [ol, dk, md, lt] = LEAVES[colour];
+  const cx = 6, cy = 5.5, R = 5.6;
+  return sprite(13, 15, put => {
+    for (let y = 0; y < 12; y++) for (let x = 0; x < 13; x++) {
+      const bump = Math.sin(Math.atan2(y - cy, x - cx) * 5 + seed) * .6, dd = Math.hypot(x - cx, y - cy);
+      if (dd > R + bump) continue;
+      const v = ((x - cx) * -.6 + (y - cy) * -.8) / R, r = hash(x, y, seed);
+      put(x, y, dd > R + bump - 1 ? ol : v + (r - .5) * .5 > .35 ? lt : v + (r - .5) * .4 > -.35 ? md : dk);
+    }
+    for (let y = 11; y < 15; y++) { put(6, y, '#4a3020'); put(5, y, '#3a2416'); }
+  });
+}
+const TREES = [pine(1), pine(2), leafy(3, 'orange'), leafy(4, 'amber'), leafy(5, 'red'), leafy(6, 'orange'), leafy(7, 'green')].map(s => [-1, 0, 1].map(k => swayed(s, k)));
+const treeKind = s => s < .3 ? (s < .15 ? 0 : 1) : s < .92 ? 2 + (s * 31 % 4 | 0) : 6;
+
+// the player: a little white figure with a black outline and lavender shading.
+// Rows of art: k outline, w white, l lavender shade, e eye. Eyes move to show which way it faces.
+const HEAD = ['..kkkkk..', '.kwwwwwk.', 'kwwwwwwlk', 'kwwwwwwlk', 'kwwwwwwlk', '.kwwwwlk.', '.kkkkkkk.', '.kwwwwlk.', '.kwwwwlk.'];
+const LEGS = [
+  ['.kwwwllk.', '.kwlkwlk.', '.kkk.kkk.'], // standing
+  ['.kwwkwlk.', 'kwlk.kwk.', 'kkk..kkk.'], // stepping
+  ['.kwlkwwk.', '.kwk.kwlk', '.kkk..kkk'],
+];
+const EYES = { down: [2, 5], right: [4, 6], left: [1, 4], up: [] };
+const HC = { k: '#16121c', w: '#f7f5ff', l: '#b9b2e8', e: '#16121c' };
+const heroCache = {};
+function hero(dir, legs, blink) {
+  const key = dir + legs + blink;
+  return heroCache[key] || (heroCache[key] = sprite(9, 12, put => {
+    const rows = [...HEAD, ...LEGS[legs]].map(r => [...r]);
+    for (const x of EYES[dir]) { rows[3][x] = blink ? 'w' : 'e'; rows[4][x] = 'e'; }
+    rows.forEach((row, y) => row.forEach((ch, x) => HC[ch] && put(x, y, HC[ch])));
+  }));
+}
+// a note sign: a cream board on a post
+const SIGN = sprite(8, 9, put => {
+  for (let x = 0; x < 8; x++) for (let y = 0; y < 5; y++) put(x, y, x === 0 || y === 0 || x === 7 || y === 4 ? '#3b2416' : '#f1e2c2');
+  [[3, 1], [4, 1], [4, 2], [3, 3]].forEach(([x, y]) => put(x, y, '#3b2416'));
+  for (let y = 5; y < 9; y++) put(3, y, '#5a3a22');
+});
+
+const INK = '#f1e2c2', BG = '#231811';
+let moving = 0, facing = 'down';
 function draw(now) {
   const t = now / 1000;
   const camX = Math.max(0, Math.min(W - cols, player.x - (cols >> 1)));
   const camY = Math.max(0, Math.min(H - rows, player.y - (rows >> 1)));
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, cols * cw, rows * fs);
-  ctx.font = `${fs}px "JetBrains Mono", ui-monospace, Menlo, monospace`; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-  // lantern light around the player, with a flicker now and then
-  const flick = Math.sin(t * 11) * .35 + Math.sin(t * 23.7) * .25 + (Math.sin(t * .9) > .97 ? -4 : 0);
-  const R = 14 + flick, lights = flies.filter(f => !f.got);
-  ctx.fillStyle = INK;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(base, camX * A, camY * A, cols * A, rows * A, 0, 0, cols * TS, rows * TS);
+  // water shimmer
+  ctx.fillStyle = 'rgba(214,236,250,.75)';
   for (let sy = 0; sy < rows; sy++) for (let sx = 0; sx < cols; sx++) {
-    const x = sx + camX, y = sy + camY;
-    if (x >= W || y >= H) continue;
-    const i = y * W + x, s = shade[i], tile = map[i];
-    let L = .07 + clamp01(1 - Math.hypot((x - player.x) * .6, y - player.y) / R) * 1.85;
-    for (const f of lights) { const d = Math.hypot((x - f.x) * .6, y - f.y); if (d < 4.5) L += (1 - d / 4.5) * 1.2; }
-    const th = BAYER[(y & 3) * 4 + (x & 3)];
-    // brightest light: inverted cream cells (the glow), then normal ink, then sparse night dots
-    if (L - 1 > th) {
-      ctx.fillRect(sx * cw, sy * fs, cw + .5, fs + .5);
-      const ch = tileChar(tile, x, y, s, t);
-      if (ch) { ctx.fillStyle = BG; ctx.fillText(ch, sx * cw, sy * fs); ctx.fillStyle = INK; }
-    } else if (L > th) { const ch = tileChar(tile, x, y, s, t); if (ch) ctx.fillText(ch, sx * cw, sy * fs); }
-    else if (tile !== T.WATER && ((x * 3 + y * 2) % 5 === 0)) ctx.fillText('.', sx * cw, sy * fs);
+    const x = sx + camX, y = sy + camY; if (map[y * W + x] !== T.WATER) continue;
+    const s = shade[y * W + x], w = Math.sin(t * 1.3 + x * .45 - y * .2 + s * 6) + Math.sin(t * .8 - x * .15 + y * .5);
+    if (w > 1.1) ctx.fillRect(sx * TS + (2 + (s * 3 | 0)) * Z, sy * TS + (3 + (s * 7 % 3 | 0)) * Z, (w > 1.5 ? 4 : 3) * Z, Z);
   }
-  const sx = (player.x - camX) * cw, sy = (player.y - camY) * fs;
-  // reflection when standing next to water
-  if (at(player.x, player.y + 1) === T.WATER) { ctx.fillStyle = INK; ctx.fillText(Math.sin(t * 6) > 0 ? '@' : 'a', sx, sy + fs); }
-  // note signs: inverted tiles
+  // note signs
   for (const n of notes) {
     if (n.x < camX || n.y < camY || n.x >= camX + cols || n.y >= camY + rows) continue;
-    const px = (n.x - camX) * cw, py = (n.y - camY) * fs;
-    cellBox(px, py, cw, fs);
-    if (n === reading) { ctx.strokeStyle = INK; ctx.strokeRect(px - 3.5, py - 3.5, cw + 7, fs + 7); }
-    ctx.fillText('?', px, py);
+    const px = (n.x - camX) * TS, py = (n.y - camY) * TS;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(px + 2 * Z, py + 7 * Z, 4 * Z, Z);
+    ctx.drawImage(SIGN, px, py - Z, 8 * Z, 9 * Z);
+    if (n === reading && Math.sin(t * 6) > -.3) { ctx.strokeStyle = '#ffe27a'; ctx.lineWidth = Z; ctx.strokeRect(px - Z, py - 2 * Z, 10 * Z, 11 * Z); }
   }
-  // fireflies blink on and off
-  ctx.fillStyle = INK;
+  // the player, behind the trees of the rows in front
+  const sx = (player.x - camX) * TS, sy = (player.y - camY) * TS;
+  const drawHero = () => {
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(sx + Z, sy + 7 * Z, 6 * Z, Z);
+    const blink = (t % 3.2) < .14;
+    ctx.drawImage(hero(facing, moving ? 1 + ((player.x + player.y) & 1) : 0, blink), sx - Z / 2, sy + TS - 11 * Z, 9 * Z, 12 * Z);
+  };
+  // trees, back to front, so each row's crowns overlap the row behind
+  for (let ty = camY - 1; ty < camY + rows + 2; ty++) {
+    if (ty === player.y + 1) drawHero();
+    for (let tx = camX - 1; tx < camX + cols + 1; tx++) {
+      if (at(tx, ty) !== T.TREE || tx < 0 || ty < 0 || tx >= W || ty >= H) continue;
+      const s = shade[ty * W + tx], set = TREES[treeKind(s)];
+      const pose = set[Math.round(Math.sin(t * 1.4 + tx * .35 + ty * .2) * .9) + 1];
+      const ox = ((hash(tx, ty, 9) - .5) * 3 | 0) - 1;
+      ctx.drawImage(pose, (tx - camX) * TS + (A - pose.width) / 2 * Z + ox * Z, (ty - camY + 1) * TS - pose.height * Z + 2 * Z, pose.width * Z, pose.height * Z);
+    }
+  }
+  if (player.y + 1 >= camY + rows + 2) drawHero();
+  // dusk: the edges dim, a warm lantern light around the player
+  const flick = Math.sin(t * 11) * .3 + Math.sin(t * 23.7) * .2;
+  const g = ctx.createRadialGradient(sx + TS / 2, sy, TS * 3, sx + TS / 2, sy, TS * (15 + flick));
+  g.addColorStop(0, 'rgba(255,180,90,.07)'); g.addColorStop(1, 'rgba(34,14,10,.5)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, cols * TS, rows * TS);
+  // fireflies glow and blink
+  ctx.globalCompositeOperation = 'lighter';
   for (const f of flies) {
     if (f.got || f.x < camX || f.y < camY || f.x >= camX + cols || f.y >= camY + rows) continue;
-    if (Math.sin(t * 4 + f.ph) > -.3) ctx.fillText('*', (f.x - camX) * cw + Math.sin(t * 2 + f.ph) * 2, (f.y - camY) * fs + Math.cos(t * 1.7 + f.ph) * 2);
+    const on = Math.sin(t * 4 + f.ph); if (on < -.3) continue;
+    const fx = (f.x - camX) * TS + TS / 2 + Math.sin(t * 2 + f.ph) * 3, fy = (f.y - camY) * TS + TS / 2 + Math.cos(t * 1.7 + f.ph) * 3;
+    const gl = ctx.createRadialGradient(fx, fy, 0, fx, fy, TS * 1.6);
+    gl.addColorStop(0, `rgba(255,226,110,${.35 + on * .2})`); gl.addColorStop(1, 'rgba(255,226,110,0)');
+    ctx.fillStyle = gl; ctx.fillRect(fx - TS * 1.6, fy - TS * 1.6, TS * 3.2, TS * 3.2);
+    ctx.fillStyle = '#fff6b0'; ctx.fillRect(Math.round(fx - Z), Math.round(fy - Z), 2 * Z, 2 * Z);
   }
-  // player: an inverted @ with a pixel name plate
-  ctx.font = `bold ${fs}px "JetBrains Mono", ui-monospace, Menlo, monospace`;
-  cellBox(sx, sy, cw, fs); ctx.fillText('@', sx, sy);
-  ctx.font = `${Math.round(fs * .62)}px Silkscreen, "JetBrains Mono", monospace`; ctx.textAlign = 'center';
-  const tw = ctx.measureText('begum').width + 8, ty = sy - fs * 1.05;
-  ctx.fillStyle = INK; ctx.fillRect(sx + cw / 2 - tw / 2, ty - 1, tw, fs * .8);
-  ctx.fillStyle = BG; ctx.fillText('begum', sx + cw / 2, ty + 1);
+  ctx.globalCompositeOperation = 'source-over';
+  // pixel name plate
+  ctx.font = `${Math.round(TS * .62)}px Silkscreen, "JetBrains Mono", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const tw = ctx.measureText('you').width + 8, ty = sy - TS * 1.6;
+  ctx.fillStyle = INK; ctx.fillRect(sx + TS / 2 - tw / 2, ty - 1, tw, TS * .8);
+  ctx.fillStyle = BG; ctx.fillText('you', sx + TS / 2, ty + 1);
   // +1 pops
   pops = pops.filter(p => now - p.t < 900);
-  ctx.fillStyle = INK;
+  ctx.fillStyle = '#ffe27a';
   for (const p of pops) {
     const k = (now - p.t) / 900;
-    if ((now / 90 | 0) % 2 || k < .5) ctx.fillText('+1', (p.x - camX) * cw + cw / 2, (p.y - camY) * fs - k * fs * 2);
+    if ((now / 90 | 0) % 2 || k < .5) ctx.fillText('+1', (p.x - camX) * TS + TS / 2, (p.y - camY) * TS - k * TS * 2);
   }
   ctx.textAlign = 'left';
 }
@@ -234,5 +360,5 @@ let visible = false, rafId = 0;
 function loop(now) { step(now); draw(now); rafId = visible ? requestAnimationFrame(loop) : 0; }
 new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible && !rafId) rafId = requestAnimationFrame(loop); }).observe(cv);
 addEventListener('resize', resize);
-resize(); reset(); updateReading();
+paintWorld(); resize(); reset(); updateReading();
 })();
