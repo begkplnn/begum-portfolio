@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Silkscreen&family=VT323&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+</script>
 <style>
   :root {
     --bg: #0b0906; --bg2: #121110; --panel: #1a1816; --line: #2c2925;
@@ -148,89 +152,230 @@
   .toolkit { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 3rem; }
   .toolkit .tags { padding: 1.2rem; }
 
-  /* game */
+  /* the room's window: a dark Mac-style window */
   .gsub { text-align: center; color: var(--grey); margin: -2rem 0 2.5rem; }
-  .gwin .bar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .gover .touch { display: none; }
+  .gwin { --sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, system-ui, sans-serif;
+    --wbg: #1c1c1e; --wbar: #2a2a2d; --wline: rgba(255,255,255,.09); --wtext: #f2f2f7; --wmuted: #98989f; --blue: #0a84ff;
+    background: var(--wbg); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; font-family: var(--sf);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 30px 70px rgba(0,0,0,.55); }
+  .gwin .bar { position: relative; justify-content: center; min-height: 44px; padding: .45rem .8rem; gap: 8px;
+    background: linear-gradient(#323235, var(--wbar)); border-bottom: 1px solid #000; color: var(--wmuted); font: 600 13px var(--sf); }
+  .gwin .bar i { position: relative; z-index: 1; width: 12px; height: 12px; border-radius: 50%; border: .5px solid rgba(0,0,0,.25); }
+  .gwin .bar i:nth-of-type(1) { background: #ff5f57; } .gwin .bar i:nth-of-type(2) { background: #febc2e; } .gwin .bar i:nth-of-type(3) { background: #28c840; }
+  .gwin .bar > span { position: absolute; left: 0; right: 0; text-align: center; margin: 0; pointer-events: none;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 10rem; }
+  .gwin .bar > i:first-child { margin-left: 0; } .gwin .bar > i:nth-of-type(3) { margin-right: auto; }
   @media (max-width: 760px) { .gwin .bar > span { display: none; } }
-  @media (pointer: coarse) { .gover .kb { display: none; } .gover .touch { display: block; } }
-  .gwin .bar b { white-space: nowrap; margin-left: auto; font-weight: normal; color: #ffe27a; }
-  .gstage { position: relative; background: #070605; display: flex; justify-content: center; overflow: hidden; }
-  #gcanvas { display: block; outline: none; }
-  .gover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem;
-    background: rgba(7,6,5,.55); border: 0; color: var(--cream); font: 400 2rem/1.1 var(--serif); width: 100%; }
-  .gover small { font: .8rem var(--mono); color: var(--grey); }
+  .gbtn { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: .35rem; padding: .32rem .75rem; border-radius: 7px; cursor: pointer;
+    background: rgba(255,255,255,.08); border: .5px solid rgba(255,255,255,.12); color: var(--wtext); font: 500 12.5px var(--sf);
+    box-shadow: 0 1px 1px rgba(0,0,0,.3); }
+  .gbtn:hover { background: rgba(255,255,255,.14); }
+  .gover { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border: 0; width: 100%;
+    background: var(--wbg); color: var(--wmuted); font: 13px var(--sf); }
+  .gover > span { display: inline-flex; align-items: center; gap: .6rem; }
+  .gover > span::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.15); border-top-color: var(--wtext);
+    animation: rspin .8s linear infinite; }
+  @keyframes rspin { to { transform: rotate(360deg); } }
   .gover[hidden] { display: none; }
-  .pad { display: none; grid-template-columns: repeat(3, 52px); gap: 6px; justify-content: center; padding: 1rem; border-top: 1px solid var(--line); }
-  .pad button { height: 46px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); color: var(--accent); font-size: 1.1rem;
-    touch-action: none; user-select: none; -webkit-user-select: none; }
-  .pad button:active { background: var(--accent); color: var(--bg); }
-  .pad [data-dir="u"] { grid-area: 1 / 2; }
-  .pad [data-dir="l"] { grid-area: 2 / 1; }
-  .pad [data-dir="d"] { grid-area: 2 / 2; }
-  .pad [data-dir="r"] { grid-area: 2 / 3; }
+  .pad { display: none; grid-template-columns: repeat(3, 54px); gap: 8px; justify-content: center; padding: 1rem; border-top: 1px solid var(--wline); }
+  .pad button { height: 46px; font-size: 1rem; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+    background: rgba(255,255,255,.08); color: var(--wtext); border: .5px solid rgba(255,255,255,.12); border-radius: 12px; }
+  .pad button:active { background: var(--blue); }
   @media (pointer: coarse), (max-width: 760px) { .pad { display: grid; } }
 
-  .sign { color: #f1ead6; font: 1rem var(--mono); text-shadow: 0 0 8px #f1ead6; }
-  .gbtn { margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--cream);
-    font: .75rem var(--mono); padding: .2rem .7rem; }
-  .gbtn:hover { border-color: var(--accent); color: var(--accent); }
-  .gwin .bar .gbtn + b { margin-left: .8rem; }
-  .gread { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(90%, 30rem);
-    background: rgba(18,17,16,.92); border: 1px solid var(--line); border-radius: 12px; padding: .8rem 1rem; text-align: center; pointer-events: none; }
-  .gread p { margin: 0; font: 400 1.35rem/1.25 var(--serif); color: var(--cream); overflow-wrap: anywhere; }
-  .gread small { color: var(--accent); font: .8rem var(--mono); }
-  .gread[hidden] { display: none; }
-  .gform { background: rgba(7,6,5,.85); font-size: 1.6rem; padding: 1rem; }
-  .gform input, .gform textarea { width: min(100%, 26rem); background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-    color: var(--cream); font: 1rem var(--sans); padding: .7rem .9rem; resize: none; }
-  .gform input:focus, .gform textarea:focus { outline: none; border-color: var(--accent); }
-  .gform small { font: .8rem var(--mono); color: var(--accent); min-height: 1em; }
-  .gform .frow { display: flex; gap: .6rem; }
-  .gnotes { border-top: 1px solid var(--line); padding: 1.4rem 1.6rem 1.6rem; }
-  .gnotes h3 { margin: 0 0 .8rem; font: 400 1.6rem var(--serif); color: var(--cream); }
-  .gnotes h3 span { font: .8rem var(--mono); color: var(--muted); vertical-align: middle; margin-left: .3rem; }
-  .gmode { margin: 0 0 1rem; font: .8rem var(--mono); color: var(--muted); }
-  .gmode[hidden] { display: none; }
-  #glist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .8rem;
-    max-height: 22rem; overflow-y: auto; }
-  #glist li { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1rem; }
-  #glist p { margin: 0 0 .3rem; color: var(--cream); overflow-wrap: anywhere; }
-  #glist small { color: var(--muted); font: .75rem var(--mono); }
-
-  /* game: 1-bit sepia skin, like old dithered pixel games */
-  .gwin { --ink: #f1e2c2; --ib: #231811; background: var(--ib); border: 3px solid var(--ink); border-radius: 10px;
-    box-shadow: 0 0 0 3px var(--ib), 0 0 0 5px var(--ink); }
-  .gwin .bar { background: var(--ink); color: var(--ib); border-bottom: 3px solid var(--ib); font: .8rem Silkscreen, var(--mono); }
-  .gwin .bar i { background: var(--ib); border-radius: 0; width: 8px; height: 8px; }
-  .gwin .bar b { color: var(--ib); font: .8rem Silkscreen, var(--mono); }
-  .gbtn { border: 2px solid var(--ib); border-radius: 4px; color: var(--ib); font: .75rem Silkscreen, var(--mono); background: var(--ink); }
-  .gbtn:hover { background: var(--ib); color: var(--ink); border-color: var(--ib); }
-  .gstage { background: var(--ib); }
-  .gover { background: rgba(35,24,17,.55); color: var(--ib); font: 1.4rem Silkscreen, var(--mono); }
-  .gover > span { background: var(--ink); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 6px; padding: .5rem 1.2rem; }
-  .gover small { color: var(--ink); font: 1.15rem VT323, var(--mono); background: var(--ib); padding: 0 .4rem; }
-  .gread { background: var(--ink); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 6px; }
-  .gread p { font: 1.45rem/1.1 VT323, var(--mono); color: var(--ib); }
-  .gread small { font: .7rem Silkscreen, var(--mono); color: var(--ib); }
-  .gform { background: rgba(35,24,17,.88); }
-  .gform input, .gform textarea { background: var(--ink); color: var(--ib); border: 3px solid var(--ib); outline: 2px solid var(--ink);
-    border-radius: 4px; font: 1.25rem VT323, var(--mono); }
-  .gform input::placeholder, .gform textarea::placeholder { color: #7a6650; }
-  .gform small { color: var(--ink); font: 1rem VT323, var(--mono); }
-  .gwin .btn { border-radius: 4px; font: .8rem Silkscreen, var(--mono); }
-  .gwin .btn.primary { background: var(--ink); color: var(--ib); border: 3px solid var(--ib); outline: 2px solid var(--ink); }
-  .gwin .btn.ghost { background: var(--ib); color: var(--ink); border: 2px solid var(--ink); }
-  .pad { border-top: 3px solid var(--ink); }
-  .pad button { background: var(--ink); color: var(--ib); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 4px; }
-  .pad button:active { background: var(--ib); color: var(--ink); }
-  .gnotes { border-top: 3px solid var(--ink); }
-  .gnotes h3 { font: 1rem Silkscreen, var(--mono); color: var(--ink); }
-  .gnotes h3 span { color: #b9a688; }
-  .gmode { color: #b9a688; font: 1rem VT323, var(--mono); }
-  #glist li { background: var(--ink); border: 3px solid var(--ib); outline: 2px solid var(--ink); border-radius: 4px; }
-  #glist p { color: var(--ib); font: 1.25rem/1.1 VT323, var(--mono); }
-  #glist small { color: #6b5640; font: .65rem Silkscreen, var(--mono); }
+  /* room stage */
+  .rstage { position: relative; aspect-ratio: 16 / 10; background: #050403; overflow: hidden; }
+  @media (max-width: 760px) { .rstage { aspect-ratio: 1 / 1.05; } }
+  #rcanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; outline: none; }
+  .rstage .gover { z-index: 2; }
+  .rhint { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 1; pointer-events: none; white-space: nowrap;
+    background: rgba(30,30,32,.62); color: #f2f2f7; border: .5px solid rgba(255,255,255,.16); border-radius: 999px;
+    backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 4px 18px rgba(0,0,0,.35);
+    padding: .4rem .95rem; font: 500 12.5px var(--sf); letter-spacing: .01em; transition: opacity .8s; opacity: 0; }
+  .rstage.ready .rhint { opacity: 1; }
+  .rstage.ready .rhint.gone { opacity: 0; }
+  .rhint .touch { display: none; }
+  @media (pointer: coarse) { .rhint .kb { display: none; } .rhint .touch { display: inline; } }
+  @media (max-width: 560px) { .rhint { white-space: normal; width: max-content; max-width: 90%; text-align: center; border-radius: 14px; } }
+  .rhint.rtop { top: .8rem; bottom: auto; opacity: 1; }
+  .rhint.rtop[hidden] { display: none; }
+  .rstage:focus-within { box-shadow: inset 0 0 0 2px rgba(10,132,255,.7); }
+  .rpad [data-move="u"] { grid-area: 1 / 2; } .rpad [data-move="j"] { grid-area: 1 / 3; }
+  .rpad [data-move="l"] { grid-area: 2 / 1; } .rpad [data-move="d"] { grid-area: 2 / 2; } .rpad [data-move="r"] { grid-area: 2 / 3; }
+  /* view buttons: a Mac segmented control, plus the light switch */
+  .rfocus { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; align-items: center; padding: .75rem; border-top: 1px solid var(--wline);
+    background: linear-gradient(var(--wbar), #232325); }
+  .rseg { display: flex; flex-wrap: wrap; justify-content: center; padding: 2px; border-radius: 8px; background: rgba(255,255,255,.07); border: .5px solid rgba(255,255,255,.08); }
+  .rfocus button { background: none; color: var(--wtext); border: 0; border-radius: 6px; padding: .3rem .8rem; font: 500 12.5px var(--sf); cursor: pointer; }
+  .rfocus button:hover { background: rgba(255,255,255,.06); }
+  .rfocus button[aria-current="true"] { background: #636366; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  #rnight { background: rgba(255,255,255,.08); border: .5px solid rgba(255,255,255,.12); border-radius: 7px; }
+  #rnight[aria-pressed="true"] { background: var(--blue); }
+  .rfocus button:focus-visible, .gbtn:focus-visible, .pad button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  #rtip { position: fixed; z-index: 20; pointer-events: none; max-width: 240px; transform: translate(14px, 14px); font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Inter, system-ui, sans-serif;
+    background: rgba(36,36,38,.82); color: #f2f2f7; border: .5px solid rgba(255,255,255,.16); border-radius: 10px; padding: .5rem .75rem;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  #rtip b { display: block; font-size: 13px; font-weight: 600; margin-bottom: .1rem; }
+  #rtip span { font-size: 12.5px; line-height: 1.35; color: #c7c7cc; }
+  #rtip[hidden] { display: none; }
+  /* book cover popup */
+  #rbook { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.55);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Inter, system-ui, sans-serif; }
+  #rbook[hidden] { display: none; }
+  .rbcard { position: relative; width: min(300px, 100%); padding: 1.6rem 1.4rem 1.3rem; border-radius: 16px; text-align: center; color: #f2f2f7;
+    background: rgba(36,36,38,.92); border: .5px solid rgba(255,255,255,.15); box-shadow: 0 30px 70px rgba(0,0,0,.6); animation: mopen .2s ease-out; }
+  #rbimg, .rbfall { display: block; width: 190px; aspect-ratio: 2 / 3; margin: 0 auto 1rem; object-fit: cover; border-radius: 3px 6px 6px 3px;
+    box-shadow: -3px 0 0 rgba(0,0,0,.25) inset, 0 14px 30px rgba(0,0,0,.5); }
+  #rbimg[hidden], .rbfall[hidden] { display: none; }
+  .rbfall { display: flex; flex-direction: column; justify-content: center; gap: .6rem; padding: 1rem; color: #fff; text-align: center; }
+  .rbfall b { font: 800 1.35rem/1.05 var(--sf, system-ui); text-transform: uppercase; letter-spacing: .02em; }
+  .rbfall span { font-size: .75rem; color: #d1d1d6; }
+  .rbcard h3 { margin: 0; font-size: 17px; font-weight: 700; }
+  #rbauthor { margin: .2rem 0 .5rem; color: #98989f; font-size: 13px; }
+  .rbfav { margin: 0; font-size: 12px; color: #ffd60a; }
+  #rbclose { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer;
+    background: rgba(255,255,255,.1); color: #d1d1d6; font-size: 12px; }
+  #rbclose:hover { background: rgba(255,255,255,.18); }
+  #rbclose:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+  /* the computer: a Mac-style desktop */
+  #ros { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+    padding: 16px; background: rgba(12,8,5,.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+  #ros[hidden] { display: none; }
+  html.ros-open { overflow: hidden; }
+  #ros { --sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, system-ui, sans-serif; --mmono: ui-monospace, "SF Mono", Menlo, monospace; }
+  .mac { width: min(1120px, calc(100vw - 32px), calc((100svh - 80px) * 1.6)); aspect-ratio: 16 / 10; padding: 10px; border-radius: 20px;
+    background: #0b0b0c; box-shadow: 0 0 0 1px #3a3a3c, 0 30px 80px rgba(0,0,0,.6); font: 13px/1.35 var(--sf); color: #1d1d1f; cursor: default; }
+  .mac * { box-sizing: border-box; }
+  .mscreen { position: relative; width: 100%; height: 100%; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column;
+    background: linear-gradient(rgba(40,20,10,.05), rgba(40,20,10,.25)), url(valley.webp) center 60% / cover, #6b4a33; }
+  .mleave { font: 12px var(--mono); color: #b9a688; background: none; border: 0; cursor: pointer; }
+  .mleave:hover { color: var(--accent); }
+  /* menu bar */
+  .mbar { flex: none; height: 26px; display: flex; align-items: center; gap: 1.1rem; padding: 0 .9rem; position: relative; z-index: 5;
+    background: rgba(246,240,232,.55); backdrop-filter: blur(24px) saturate(1.6); -webkit-backdrop-filter: blur(24px) saturate(1.6); color: #111; font-size: 13px; }
+  .mbar b { font-weight: 700; }
+  .mbar .mm { opacity: .9; }
+  .mbar .mr { margin-left: auto; display: flex; align-items: center; gap: .9rem; }
+  .mbar svg { width: 16px; height: 16px; display: block; }
+  /* desktop + windows */
+  .mdesk { position: relative; flex: 1; min-height: 0; }
+  .mwin { position: absolute; display: flex; flex-direction: column; min-width: 280px; min-height: 200px; border-radius: 11px; overflow: hidden;
+    background: #fff; box-shadow: 0 0 0 .5px rgba(0,0,0,.35), 0 22px 60px rgba(0,0,0,.42); animation: mopen .18s ease-out; }
+  .mwin[hidden] { display: none; }
+  .mwin.mini { display: none; }
+  .mwin.max { left: 0 !important; top: 0 !important; width: 100% !important; height: calc(100% - 78px) !important; border-radius: 0; }
+  @keyframes mopen { from { opacity: 0; transform: scale(.94) translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { .mwin { animation: none; } }
+  .mtitle { flex: none; height: 30px; display: flex; align-items: center; justify-content: center; position: relative; padding: 0 76px;
+    background: #ececec; border-bottom: 1px solid #d4d4d4; font-weight: 600; font-size: 13px; color: #444; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .mtitle > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mwin:not(.front) .mtitle { color: #999; }
+  .lights { position: absolute; left: 11px; top: 9px; display: flex; gap: 8px; }
+  .lights button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: .5px solid rgba(0,0,0,.18); cursor: pointer; display: grid; place-items: center;
+    font: 700 9px/1 var(--sf); color: transparent; }
+  .lights button:nth-child(1) { background: #ff5f57; } .lights button:nth-child(2) { background: #febc2e; } .lights button:nth-child(3) { background: #28c840; }
+  .lights:hover button { color: rgba(0,0,0,.55); }
+  .mwin:not(.front) .lights:not(:hover) button { background: #d6d6d6; }
+  .lights button:focus-visible, .mdock button:focus-visible, .mac .mfocus:focus-visible { outline: 2px solid #0a84ff; outline-offset: 2px; }
+  .mbody { flex: 1; min-height: 0; display: flex; }
+  .mwin.dark { background: #1c1c1e; color: #f2f2f7; box-shadow: 0 0 0 .5px rgba(255,255,255,.15), 0 0 0 1px rgba(0,0,0,.6), 0 22px 60px rgba(0,0,0,.5); }
+  .mwin.dark .mtitle { background: #2c2c2e; border-color: #111; color: #d1d1d6; }
+  .mwin.dark:not(.front) .mtitle { color: #77777c; }
+  /* dock */
+  .mdock { position: absolute; z-index: 6; left: 50%; bottom: 7px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 6px; padding: 5px 7px;
+    border-radius: 18px; background: rgba(250,244,236,.32); border: 1px solid rgba(255,255,255,.35);
+    backdrop-filter: blur(22px) saturate(1.5); -webkit-backdrop-filter: blur(22px) saturate(1.5); box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .mdock button { position: relative; width: 54px; height: 60px; padding: 0 0 6px; border: 0; background: none; cursor: pointer;
+    transition: transform .15s ease-out; transform-origin: bottom center; }
+  .mdock button:hover { transform: scale(1.18) translateY(-4px); }
+  .mdock button::after { content: attr(data-name); position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); white-space: nowrap;
+    background: rgba(240,240,240,.92); color: #222; font: 12px var(--sf); padding: 3px 9px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    opacity: 0; pointer-events: none; transition: opacity .12s; }
+  .mdock button:hover::after, .mdock button:focus-visible::after { opacity: 1; }
+  .mdock button > i { position: absolute; left: 50%; bottom: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: rgba(30,20,10,.8); opacity: 0; }
+  .mdock button.on > i { opacity: 1; }
+  .mdock .ico { display: block; width: 54px; height: 54px; border-radius: 13px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,.3), inset 0 0 0 .5px rgba(255,255,255,.2); }
+  .mdock .ico svg { width: 100%; height: 100%; display: block; }
+  .mdock .msep { align-self: stretch; width: 1px; margin: 6px 3px 10px; background: rgba(40,25,15,.3); }
+  /* trading */
+  .wl { flex: none; width: 210px; overflow-y: auto; background: #161618; border-right: 1px solid #000; padding: .6rem 0; }
+  .wl h4 { margin: 0 .9rem .4rem; font-size: 19px; font-weight: 700; color: #fff; }
+  .wl small.d { display: block; margin: -2px .9rem .6rem; color: #8e8e93; font-size: 12px; }
+  .wl button { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 0 .5rem; align-items: center; text-align: left; padding: .5rem .9rem;
+    border: 0; border-top: 1px solid #2c2c2e; background: none; color: #f2f2f7; font: inherit; cursor: pointer; }
+  .wl button[aria-pressed="true"] { background: #2c2c2e; }
+  .wl b { font-size: 14px; } .wl .nm { grid-column: 1; color: #8e8e93; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wl .wpx { grid-row: 1; grid-column: 2; text-align: right; font-variant-numeric: tabular-nums; }
+  .wl .pill { grid-column: 2; justify-self: end; min-width: 62px; text-align: center; border-radius: 5px; padding: 1px 6px; font-size: 12px; font-weight: 600;
+    color: #fff; background: #30d158; font-variant-numeric: tabular-nums; }
+  .wl .pill.down { background: #ff453a; }
+  .tmain { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: .9rem 1.1rem .7rem; }
+  .rqhead { display: flex; align-items: baseline; gap: .7rem; flex-wrap: wrap; }
+  .rqhead .sym { font-size: 22px; font-weight: 700; } .rqhead .nm { color: #8e8e93; }
+  .rqhead .big { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .rqhead .up { color: #30d158; } .rqhead .down { color: #ff453a; }
+  .tlive { font-size: 11px; color: #8e8e93; margin: .1rem 0 .5rem; } .tlive::before { content: "●"; color: #30d158; margin-right: .35rem; }
+  .chartbox { position: relative; flex: 1; min-height: 120px; }
+  #rchart { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .tfine { margin: .5rem 0 0; color: #6e6e73; font-size: 11px; }
+  /* terminal */
+  .term { flex: 1; min-width: 0; overflow-y: auto; padding: .5rem .7rem; background: #1e1e1e; color: #e5e5e5; font: 12.5px/1.45 var(--mmono); cursor: text; }
+  .term pre { margin: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .term .p { color: #63d26f; } .term .e { color: #ff6b6b; } .term .a { color: #ffb86b; } .term .dim { color: #8a8a8a; }
+  .term form { display: flex; gap: .5ch; }
+  .term input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: inherit; font: inherit; caret-color: #e5e5e5; padding: 0; }
+  /* notes */
+  .nside { flex: none; width: 240px; display: flex; flex-direction: column; background: #f6f5f2; border-right: 1px solid #ddd; }
+  .nside header { display: flex; align-items: center; justify-content: space-between; padding: .55rem .8rem; border-bottom: 1px solid #e4e2dc; }
+  .nside header b { font-size: 13px; } .nside header small { color: #8e8e93; font-size: 11px; display: block; font-weight: 400; }
+  .nnew { width: 30px; height: 26px; border: 0; border-radius: 6px; background: none; color: #a37b00; cursor: pointer; display: grid; place-items: center; }
+  .nnew:hover { background: #e9e6de; }
+  .nnew svg { width: 18px; height: 18px; }
+  #rnotelist { list-style: none; margin: 0; padding: .3rem; overflow-y: auto; flex: 1; }
+  #rnotelist button { width: 100%; text-align: left; border: 0; border-radius: 7px; background: none; padding: .5rem .65rem; cursor: pointer; font: inherit; color: inherit;
+    border-bottom: 1px solid #ebe9e3; }
+  #rnotelist button:hover { background: #eeece6; }
+  #rnotelist button[aria-current="true"] { background: #fbd96b; border-color: transparent; }
+  #rnotelist b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #rnotelist small { display: block; color: #6e6e73; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nmain { flex: 1; min-width: 0; overflow-y: auto; padding: 1rem 1.4rem 1.2rem; background: #fffdf7; }
+  .nmain .when { text-align: center; color: #8e8e93; font-size: 11.5px; margin: 0 0 .8rem; }
+  .nread p { margin: 0 0 .8rem; font-size: 17px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .nread .by { color: #8e8e93; font-size: 13px; }
+  #rnoteform[hidden], .nread[hidden] { display: none; }
+  #rnoteform { display: flex; flex-direction: column; gap: .5rem; height: 100%; }
+  #rnoteform input, #rnoteform textarea { width: 100%; border: 0; background: none; color: #1d1d1f; font: inherit; resize: none; outline: none; padding: 0; }
+  #rnoteform input { font-size: 22px; font-weight: 700; }
+  #rnoteform textarea { flex: 1; min-height: 6rem; font-size: 15px; line-height: 1.5; }
+  #rnoteform input::placeholder, #rnoteform textarea::placeholder { color: #b5b1a6; }
+  #rnoteform .row { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; border-top: 1px solid #eee8d8; padding-top: .6rem; }
+  #rnoteform small { color: #8e8e93; font-size: 12px; }
+  #rcount { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .npin { border: 0; border-radius: 7px; background: #e5b800; color: #1d1d1f; font: 600 13px var(--sf); padding: .4rem .9rem; cursor: pointer; }
+  .npin:hover { background: #f0c419; }
+  .rfine { margin: 0; padding: .45rem .8rem; color: #8e8e93; font-size: 11px; border-top: 1px solid #e4e2dc; }
+  /* small screens: the computer fills the screen and windows fill the desktop */
+  @media (max-width: 760px) {
+    #ros { padding: 0; gap: 0; }
+    .mac { width: 100%; height: 100%; aspect-ratio: auto; padding: 0; border-radius: 0; }
+    .mscreen { border-radius: 0; }
+    .mleave { position: absolute; z-index: 40; top: 2px; right: 8px; color: #111; font: 600 12px var(--sf); }
+    .mbar .mm, .mbar .mr .bat, .mbar .mr time { display: none; }
+    .mbar .mr { margin-right: 9.5rem; }
+    .mleave { top: 0; height: 26px; }
+    .mwin, .mwin.max { left: 0 !important; top: 0 !important; width: 100% !important; height: calc(100% - 78px) !important; min-width: 0; border-radius: 0; }
+    .mtitle { touch-action: auto; }
+    .mbody { flex-direction: column; }
+    .wl { width: auto; overflow-x: auto; overflow-y: hidden; padding: .4rem; border: 0; border-bottom: 1px solid #000; }
+    #rchips { display: flex; gap: .3rem; }
+    .wl h4, .wl small.d { display: none; }
+    .wl button { flex: none; width: auto; border: 0; border-radius: 8px; grid-template-columns: auto; }
+    .wl .wpx, .wl .pill { grid-column: 1; grid-row: auto; justify-self: start; }
+    .nside { width: auto; max-height: 38%; order: 2; border: 0; border-top: 1px solid #ddd; }
+    .nmain { order: 1; }
+    .mdock button { width: 46px; height: 52px; } .mdock .ico { width: 46px; height: 46px; border-radius: 11px; }
+  }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* contact */
   .contact { text-align: center; position: relative; isolation: isolate; overflow: hidden; padding: 9rem 0; }
@@ -297,7 +442,7 @@
     <a class="l" href="#about">About</a>
     <a class="l" href="#projects">Projects</a>
     <a class="l" href="#experience">Experience</a>
-    <a class="l" href="#game">Game</a>
+    <a class="l" href="#room">Room</a>
     <a class="l" href="#contact">Contact</a>
   </div>
 </nav>
@@ -431,35 +576,109 @@
   </div>
 </section>
 
-<section class="page" id="game">
+<section class="page dots" id="room">
   <div class="wrap">
-    <h2 class="big reveal"><span class="dim">Take a</span> <em>walk</em>.</h2>
-    <p class="gsub reveal">A tiny pixel forest. Find the fireflies, read the <b class="sign">?</b> signs, and leave a note for the next visitor.</p>
+    <h2 class="big reveal"><span class="dim">Come into my</span> <em>room</em>.</h2>
+    <p class="gsub reveal">Drag to look around, walk me with the arrow keys, flip the lights, and use my computer: check the (made-up) markets, poke the terminal, or leave me a note.</p>
     <div class="win gwin reveal">
-      <div class="bar"><i></i><i></i><i></i><span>~/game/jungle-walk</span><button id="gnote" class="gbtn" type="button">✎ leave a note</button><b id="ghud">fireflies 0/10</b></div>
-      <div class="gstage">
-        <canvas id="gcanvas" tabindex="0" aria-label="Pixel forest mini game"></canvas>
-        <button id="gstart" class="gover"><span>▶ Click to play</span><small class="kb">arrows or WASD to move · N to leave a note · esc to stop</small><small class="touch">use the arrows below to move</small></button>
-        <div id="gread" class="gread" hidden></div>
-        <form id="gform" class="gover gform" hidden>
-          <span>Leave a note here</span>
-          <input id="gname" maxlength="20" placeholder="your name" autocomplete="off" required>
-          <textarea id="gtext" maxlength="140" rows="3" placeholder="say hi, leave a tip, or a tiny poem (140 characters)" required></textarea>
-          <small id="gerr" aria-live="polite"></small>
-          <div class="frow"><button type="button" id="gcancel" class="btn ghost">Cancel</button><button class="btn primary">Pin it 📌</button></div>
-        </form>
-        <div id="gmsg" class="gover" hidden><span>You found every firefly 🐯</span><button id="gagain" class="btn primary">Play again</button></div>
+      <div class="bar"><i></i><i></i><i></i><span>Begum's Room</span><button id="rnote" class="gbtn" type="button">Leave a note</button></div>
+      <div class="rstage" id="rstage">
+        <canvas id="rcanvas" tabindex="0" aria-label="Interactive 3D bedroom. Arrow keys or WASD walk the character, space does pull-ups at the door bar. Use the buttons below to look at the bed, the snowboard, the computer, the gym corner or the books."></canvas>
+        <div class="gover" id="rcover"><span>loading room…</span></div>
+        <div class="rhint" id="rhint"><span class="kb">Drag to turn the room · click it, then walk with the arrow keys · click the computer</span><span class="touch">Swipe sideways to turn the room · walk with the arrows below</span></div>
+        <div class="rhint rtop" id="rprompt" hidden></div>
       </div>
-      <div class="pad" aria-label="Move">
-        <button data-dir="u" aria-label="Up">▲</button>
-        <button data-dir="l" aria-label="Left">◀</button><button data-dir="d" aria-label="Down">▼</button><button data-dir="r" aria-label="Right">▶</button>
+      <div class="pad rpad" id="rpad" aria-label="Walk around the room">
+        <button type="button" data-move="u" aria-label="Walk up">▲</button>
+        <button type="button" data-move="j" aria-label="Pull-ups">⤒</button>
+        <button type="button" data-move="l" aria-label="Walk left">◀</button><button type="button" data-move="d" aria-label="Walk down">▼</button><button type="button" data-move="r" aria-label="Walk right">▶</button>
       </div>
-      <div class="gnotes">
-        <h3>Notes from visitors <span id="gcount">0</span></h3>
-        <p id="gmode" class="gmode">Preview mode: notes are only saved in this browser until the online guestbook is connected.</p>
-        <ul id="glist"></ul>
+      <div class="rfocus" id="rfocus" aria-label="Look around the room">
+        <div class="rseg" role="group" aria-label="Views">
+        <button type="button" data-focus="room" aria-current="true">Whole room</button>
+        <button type="button" data-focus="bed">Bed</button>
+        <button type="button" data-focus="board">Snowboard</button>
+        <button type="button" data-focus="desk">Computer</button>
+        <button type="button" data-focus="gym">Gym</button>
+        <button type="button" data-focus="books">Books</button>
+        </div>
+        <button type="button" id="rnight" aria-pressed="false">☀ Day</button>
       </div>
     </div>
+  </div>
+  <div id="rtip" hidden></div>
+  <div id="rbook" hidden>
+    <div class="rbcard" role="dialog" aria-modal="true" aria-labelledby="rbtitle">
+      <button type="button" id="rbclose" aria-label="Close">✕</button>
+      <img id="rbimg" alt="" hidden>
+      <div class="rbfall" id="rbfall" hidden></div>
+      <h3 id="rbtitle"></h3>
+      <p id="rbauthor"></p>
+      <p class="rbfav">One of my favourites</p>
+    </div>
+  </div>
+  <div id="ros" hidden>
+    <div class="mac" role="dialog" aria-modal="true" aria-label="Begum's computer">
+      <div class="mscreen">
+        <div class="mbar">
+          <span aria-hidden="true">🐯</span><b id="mapp">Finder</b>
+          <span class="mm" aria-hidden="true">File</span><span class="mm" aria-hidden="true">Edit</span><span class="mm" aria-hidden="true">View</span><span class="mm" aria-hidden="true">Window</span>
+          <span class="mr">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 6.2a9.3 9.3 0 0 1 13 0M3.9 8.8a6 6 0 0 1 8.2 0M6.3 11.3a2.6 2.6 0 0 1 3.4 0" stroke="#111" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+            <svg class="bat" viewBox="0 0 26 14" style="width:24px" aria-hidden="true"><rect x=".75" y="1.75" width="21" height="10.5" rx="3" stroke="#111" stroke-opacity=".5" fill="none"/><rect x="2.5" y="3.5" width="15" height="7" rx="1.5" fill="#111"/><rect x="23" y="5" width="1.6" height="4" rx=".8" fill="#111" fill-opacity=".5"/></svg>
+            <time id="mclock"></time>
+          </span>
+        </div>
+        <div class="mdesk" id="mdesk">
+          <section class="mwin dark" id="app-stocks" data-app="stocks" data-title="Trading" hidden aria-label="Trading">
+            <header class="mtitle"><span class="lights"><button type="button" data-act="close" aria-label="Close Trading">×</button><button type="button" data-act="min" aria-label="Minimize Trading">−</button><button type="button" data-act="max" aria-label="Zoom Trading">+</button></span><span>Trading</span></header>
+            <div class="mbody">
+              <aside class="wl"><h4>Stocks</h4><small class="d" id="rdate"></small><div id="rchips" role="group" aria-label="Watchlist"></div></aside>
+              <div class="tmain">
+                <div class="rqhead"><span class="sym" id="rqsym"></span><span class="nm" id="rqname"></span><span class="big" id="rqpx"></span><span class="ch" id="rqch"></span></div>
+                <div class="tlive">live · made-up market</div>
+                <div class="chartbox"><canvas id="rchart" role="img" aria-label="Live candlestick chart of a made-up ticker"></canvas></div>
+                <p class="tfine">All made up, just for fun. Not a real market and definitely not financial advice.</p>
+              </div>
+            </div>
+          </section>
+          <section class="mwin dark" id="app-term" data-app="term" data-title="Terminal" hidden aria-label="Terminal">
+            <header class="mtitle"><span class="lights"><button type="button" data-act="close" aria-label="Close Terminal">×</button><button type="button" data-act="min" aria-label="Minimize Terminal">−</button><button type="button" data-act="max" aria-label="Zoom Terminal">+</button></span><span>guest — -zsh — 80×24</span></header>
+            <div class="mbody">
+              <div class="term" id="term" aria-live="polite"><pre id="tout"></pre><form id="tform" autocomplete="off"><label for="tin" class="p">guest@begums-mac ~ %</label><input id="tin" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send"></form></div>
+            </div>
+          </section>
+          <section class="mwin" id="app-notes" data-app="notes" data-title="Notes" hidden aria-label="Notes">
+            <header class="mtitle"><span class="lights"><button type="button" data-act="close" aria-label="Close Notes">×</button><button type="button" data-act="min" aria-label="Minimize Notes">−</button><button type="button" data-act="max" aria-label="Zoom Notes">+</button></span><span>Notes</span></header>
+            <div class="mbody">
+              <aside class="nside">
+                <header><div><b>Visitor notes</b><small id="rnotecount">0 notes</small></div>
+                  <button type="button" class="nnew" id="rnew" aria-label="Write a new note" title="New note"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3.5H5A1.5 1.5 0 0 0 3.5 5v10A1.5 1.5 0 0 0 5 16.5h10a1.5 1.5 0 0 0 1.5-1.5v-4"/><path d="M14.5 2.5l3 3L10 13H7v-3z"/></svg></button></header>
+                <ul id="rnotelist" aria-label="Notes from visitors"></ul>
+                <p class="rfine" id="rnotefine"></p>
+              </aside>
+              <div class="nmain">
+                <p class="when" id="rwhen"></p>
+                <form id="rnoteform">
+                  <label class="sr" for="rname">Your name</label>
+                  <input id="rname" maxlength="20" placeholder="Your name (optional)" autocomplete="nickname">
+                  <label class="sr" for="rtext">Your note</label>
+                  <textarea id="rtext" maxlength="140" placeholder="Leave me a note: a song, a snowboard spot, a book, a hello…" required></textarea>
+                  <div class="row"><button class="npin">Pin it 📌</button><small id="rnotemsg" aria-live="polite"></small><small id="rcount">0 / 140</small></div>
+                </form>
+                <article class="nread" id="rread" hidden></article>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div class="mdock" role="toolbar" aria-label="Dock">
+          <button type="button" data-open="stocks" data-name="Trading" aria-label="Open Trading"><span class="ico"><svg viewBox="0 0 54 54" aria-hidden="true"><rect width="54" height="54" fill="#121214"/><path d="M7 45h40" stroke="#3a3a3c" stroke-width="1.5"/><polyline points="7,37 15,32 21,35 28,23 34,27 41,15 47,18" fill="none" stroke="#30d158" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="47" cy="18" r="3" fill="#30d158"/></svg></span><i></i></button>
+          <button type="button" data-open="term" data-name="Terminal" aria-label="Open Terminal"><span class="ico"><svg viewBox="0 0 54 54" aria-hidden="true"><defs><linearGradient id="mgt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a5a5e"/><stop offset="1" stop-color="#232325"/></linearGradient></defs><rect width="54" height="54" fill="url(#mgt)"/><rect x="5" y="7" width="44" height="40" rx="5" fill="#0d0d0d"/><path d="M12 17l7 5-7 5" stroke="#e5e5e5" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 29h10" stroke="#e5e5e5" stroke-width="2.6" stroke-linecap="round"/></svg></span><i></i></button>
+          <button type="button" data-open="notes" data-name="Notes" aria-label="Open Notes"><span class="ico"><svg viewBox="0 0 54 54" aria-hidden="true"><rect width="54" height="54" fill="#fffdf4"/><rect width="54" height="15" fill="#f5c518"/><path d="M0 15h54" stroke="#d8a900"/><path d="M8 25h38M8 33h38M8 41h24" stroke="#d9d4c3" stroke-width="1.6"/></svg></span><i></i></button>
+        </div>
+      </div>
+    </div>
+    <button class="mleave" id="rclose" type="button">leave the computer ✕</button>
   </div>
 </section>
 
@@ -485,8 +704,19 @@
 <script src="tiger-frames.js"></script>
 <script src="tiger-run.js"></script>
 <script src="notes.js"></script>
-<script src="game.js"></script>
 <script src="paws.js"></script>
+<script>
+// Load the 3D room only when its section is about to scroll into view
+(() => {
+  const el = document.getElementById('room');
+  const go = () => import('./room/room.js').catch(e => {
+    document.querySelector('#rcover span').textContent = 'The room could not load. Please refresh.'; console.error(e);
+  });
+  if (!('IntersectionObserver' in window)) return go();
+  const lazy = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { lazy.disconnect(); go(); } }, { rootMargin: '600px 0px' });
+  lazy.observe(el);
+})();
+</script>
 <script>
 // Fade sections in as they scroll into view
 const io = new IntersectionObserver(es => es.forEach(e => {

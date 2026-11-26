@@ -8,7 +8,7 @@ window.Notes = (() => {
   const online = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
   const LOCAL = 'jungle-notes', LAST = 'jungle-last-note';
   const headers = { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
-  const welcome = [{ x: -1, y: -1, name: 'begum', text: 'Welcome to my jungle! Leave a note anywhere 🐯', created_at: '2026-11-01T00:00:00Z' }];
+  const welcome = [{ x: -1, y: -1, name: 'begum', text: 'Welcome to my room! Leave me a note 🐯', created_at: '2026-11-01T00:00:00Z' }];
 
   const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL)) || []; } catch { return []; } };
   const writeLocal = list => { try { localStorage.setItem(LOCAL, JSON.stringify(list)); } catch {} };
@@ -42,8 +42,14 @@ window.Notes = (() => {
       writeLocal([note, ...readLocal()]);
     }
     try { localStorage.setItem(LAST, Date.now()); } catch {}
+    dispatchEvent(new CustomEvent('notes:added', { detail: note }));
     return note;
   }
 
-  return { online, load, add, waitSeconds };
+  // Notes left on the computer in the 3D room share this table.
+  // They're stored at x = -1, y = 0 (older notes kept the spot they had on the old forest map).
+  const ROOM = { x: -1, y: 0 };
+  const isRoom = n => n.x === ROOM.x && n.y === ROOM.y;
+
+  return { online, load, add, waitSeconds, ROOM, isRoom };
 })();

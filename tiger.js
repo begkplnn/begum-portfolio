@@ -68,19 +68,19 @@ function render() {
   const d = g.getImageData(0, 0, cols, rows).data;
   o.setTransform(dpr, 0, 0, dpr, 0, 0);
   o.fillStyle = '#0b0906'; o.fillRect(0, 0, cols * cw, rows * fs);
-  o.font = `bold ${fs}px ui-monospace, Menlo, Consolas, monospace`; o.textBaseline = 'top';
+  o.font = `500 ${fs}px ui-monospace, Menlo, Consolas, monospace`; o.textBaseline = 'top';
   for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
     const i = (y * cols + x) * 4;
     const nx = x / cols - .5, ny = y / rows - .5;
-    const fade = Math.max(0, Math.min(1, (.5 - Math.abs(nx)) * 9) * Math.min(1, (.5 - Math.abs(ny)) * 7));
+    const fade = Math.max(0, Math.min(1, (.5 - Math.abs(nx)) * 8) * Math.min(1, (.5 - Math.abs(ny)) * 6));
     const r = d[i], gr = d[i + 1], b = d[i + 2];
-    const L = Math.pow((0.3 * r + 0.59 * gr + 0.11 * b) / 255, 0.65) * fade * (0.95 + 0.1 * hash(x, y));
-    const idx = Math.min(RAMP.length - 1, L * 1.35 * (RAMP.length - 1) | 0);
+    const L = Math.pow((0.3 * r + 0.59 * gr + 0.11 * b) / 255, 0.74) * fade * (0.95 + 0.1 * hash(x, y));
+    const idx = Math.min(RAMP.length - 1, L * 1.22 * (RAMP.length - 1) | 0);
     if (!idx) continue;
     // keep the photo's hue but lift it so dark fur still reads on black
     const avg = (r + gr + b) / 3, sat = 1.6;
     const sr = Math.max(0, avg + (r - avg) * sat), sg = Math.max(0, avg + (gr - avg) * sat), sb = Math.max(0, avg + (b - avg) * sat);
-    const m = Math.max(sr, sg, sb, 1), lift = (150 + 105 * Math.min(1, L * 1.4)) / m;
+    const m = Math.max(sr, sg, sb, 1), lift = (120 + 120 * Math.min(1, L * 1.3)) / m;
     o.fillStyle = `rgb(${Math.min(255, sr * lift) | 0},${Math.min(255, sg * lift) | 0},${Math.min(255, sb * lift) | 0})`;
     o.fillText(RAMP[idx], x * cw, y * fs);
   }
